@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Hot Potato</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="join_game">Join Game</string>
+    <string name="host_game">HostGame</string>
 </resources>
