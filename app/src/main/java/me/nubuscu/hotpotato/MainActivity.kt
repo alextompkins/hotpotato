@@ -1,7 +1,9 @@
 package me.nubuscu.hotpotato
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.tabs.TabLayout
@@ -32,6 +34,13 @@ class MainActivity : AppCompatActivity() {
         adapter = MenuPagerAdapter(supportFragmentManager)
         viewPager.adapter = adapter
         tabLayout.setupWithViewPager(viewPager)
+
+        // TODO remove debug button
+        val debugInGameButton: Button = findViewById(R.id.debugInGameButton)
+        debugInGameButton.setOnClickListener {
+            val intent = Intent(this, InGameActivity::class.java)
+            startActivity(intent)
+        }
     }
 }
 
