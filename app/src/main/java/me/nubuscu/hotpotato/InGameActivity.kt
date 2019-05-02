@@ -21,7 +21,9 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
 
     private val TAG = "InGameActivity"
 
-    private lateinit var physicsThread: Thread
+    private lateinit var physicsThread: PhysicsThread
+    private val pauseLock = Object()
+
     private lateinit var rollText: TextView
     private lateinit var pitchText: TextView
     private lateinit var container: LinearLayout
@@ -49,11 +51,21 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
-        // TODO involve onResume and onPause so that the physics processing only occurs when activity in foreground
-        physicsThread = object : Thread() {
-            override fun run() {
-                while (!isInterrupted) {
+        physicsThread = PhysicsThread()
+        physicsThread.start()
+    }
+
+    inner class PhysicsThread : Thread() {
+        var paused = false
+
+        override fun run() {
+            while (!isInterrupted) {
+                synchronized (pauseLock) {
                     try {
+                        if (paused) {
+                            pauseLock.wait()
+                        }
+
                         sleep(10)
                         runOnUiThread {
                             processPhysics()
@@ -106,13 +118,20 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         super.onResume()
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
         sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI)
-        physicsThread.start()
+
+        synchronized (pauseLock) {
+            // Unblock thread
+            physicsThread.paused = false
+            pauseLock.notifyAll()
+        }
     }
 
     override fun onPause() {
         super.onPause()
         sensorManager.unregisterListener(this)
-        physicsThread.interrupt()
+
+        // Block thread
+        physicsThread.paused = true
     }
 
     override fun onSensorChanged(event: SensorEvent) {
