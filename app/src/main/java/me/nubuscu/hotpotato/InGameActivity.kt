@@ -13,6 +13,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.roundToInt
 
+
+data class Vector2D(var x: Float, var y: Float)
+
+
 class InGameActivity : AppCompatActivity(), SensorEventListener {
 
     private val TAG = "InGameActivity"
@@ -28,9 +32,9 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     private var acceleration: FloatArray = FloatArray(9) { 0f }
     private var geomagnetic: FloatArray = FloatArray(9) { 0f }
     private var orientation: FloatArray = FloatArray(3) { 0f }
-
-    private var potatoPos = floatArrayOf(0f, 0f)
-    private var potatoVel = floatArrayOf(0f, 0f)
+    
+    private var potatoPos = Vector2D(0f, 0f)
+    private var potatoVel = Vector2D(0f, 0f)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +54,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
             override fun run() {
                 while (!isInterrupted) {
                     try {
-                        sleep(50)
+                        sleep(10)
                         runOnUiThread {
                             processPhysics()
                         }
@@ -63,18 +67,30 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun processPhysics() {
-        val MAX_VELOCITY = 30f
-
         Log.i(TAG, "processPhysics()")
-
         val maxX = container.width - potatoImage.drawable.intrinsicWidth
         val maxY = container.height - potatoImage.drawable.intrinsicHeight
+        
+        // Update positions
+        potatoPos.x = potatoPos.x.addWithinBounds(potatoVel.x, 0f, maxX.toFloat())
+        potatoPos.y = potatoPos.y.addWithinBounds(potatoVel.y, 0f, maxY.toFloat())
+        updatePotatoPos(potatoPos.x.toInt(), potatoPos.y.toInt())
 
-        potatoVel[0] = potatoVel[0].addWithinBounds(orientation[2] * 5, -MAX_VELOCITY, MAX_VELOCITY)
-        potatoVel[1] = potatoVel[1].addWithinBounds(-(orientation[1] * 5), -MAX_VELOCITY, MAX_VELOCITY)
-        potatoPos[0] = potatoPos[0].addWithinBounds(potatoVel[0], 0f, maxX.toFloat())
-        potatoPos[1] = potatoPos[1].addWithinBounds(potatoVel[1], 0f, maxY.toFloat())
-        updatePotatoPos(potatoPos[0].toInt(), potatoPos[1].toInt())
+        // If on edge, bounce
+        if (potatoPos.x == 0f || potatoPos.x == maxX.toFloat()) {
+            potatoVel.x = -potatoVel.x
+        }
+        if (potatoPos.y == 0f || potatoPos.y == maxY.toFloat()) {
+            potatoVel.y = -potatoVel.y
+        }
+
+        // Update velocities
+        potatoVel.x += orientation[2]
+        potatoVel.y -= orientation[1] * 2
+
+        // Slow down gradually over time
+        potatoVel.x *= 0.95f
+        potatoVel.y *= 0.95f
     }
 
     private fun updatePotatoPos(x: Int, y: Int) {
