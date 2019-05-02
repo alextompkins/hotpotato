@@ -6,15 +6,17 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo
+import me.nubuscu.hotpotato.JoinableGameModel
 import me.nubuscu.hotpotato.R
 
 class JoinableGameAdapter(
-    private val games: List<DiscoveredEndpointInfo>,
-    private val clickListener: (DiscoveredEndpointInfo) -> Unit
+    private val games: List<JoinableGameModel>,
+    private val clickListener: (JoinableGameModel) -> Unit
 ) :
     RecyclerView.Adapter<JoinableGameAdapter.JoinableGameViewHolder>() {
 
     class JoinableGameViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        // endpointId ..?
         val name: TextView = view.findViewById(R.id.endpointName)
         val serviceId: TextView = view.findViewById(R.id.sessionId)
     }
