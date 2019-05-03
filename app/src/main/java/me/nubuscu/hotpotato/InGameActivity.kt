@@ -7,11 +7,15 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.roundToInt
+
+
+const val FRICTION_COEFF = 0.95f
 
 
 data class Vector2D(var x: Float, var y: Float)
@@ -41,6 +45,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_in_game)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         rollText = findViewById(R.id.rollText)
         pitchText = findViewById(R.id.pitchText)
@@ -101,8 +106,8 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         potatoVel.y -= orientation[1] * 2
 
         // Slow down gradually over time
-        potatoVel.x *= 0.95f
-        potatoVel.y *= 0.95f
+        potatoVel.x *= FRICTION_COEFF
+        potatoVel.y *= FRICTION_COEFF
     }
 
     private fun updatePotatoPos(x: Int, y: Int) {
