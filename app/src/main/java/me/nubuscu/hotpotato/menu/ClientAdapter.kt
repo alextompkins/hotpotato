@@ -6,12 +6,12 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import me.nubuscu.hotpotato.R
-import me.nubuscu.hotpotato.model.ActiveClientModel
+import me.nubuscu.hotpotato.model.ClientDetailsModel
 
 /**
  * Adapter to display a list of connected Nearby clients
  */
-class ClientAdapter(private val clients: List<ActiveClientModel>, private val clickListener: () -> Unit) :
+class ClientAdapter(private val clients: List<ClientDetailsModel>, private val clickListener: () -> Unit) :
     RecyclerView.Adapter<ClientAdapter.ClientViewHolder>() {
     class ClientViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val clientName: TextView = view.findViewById(R.id.clientName)

@@ -14,10 +14,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.AdvertisingOptions
+import com.google.android.gms.nearby.connection.Payload
 import com.google.android.gms.nearby.connection.Strategy
+import com.google.gson.Gson
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
+import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
+import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.serviceId
 
 // TODO: Rename parameter arguments, choose names that match
@@ -52,6 +56,7 @@ class HostGameFragment : Fragment() {
             if (newClients != null) {
                 joinedClientsList.adapter = ClientAdapter(newClients) { /*TODO click listener goes here*/ }
                 (joinedClientsList.adapter as ClientAdapter).notifyDataSetChanged()
+                notifyClientsOfClients(newClients)
             }
         })
     }
@@ -95,6 +100,14 @@ class HostGameFragment : Fragment() {
         Nearby.getConnectionsClient(requireContext()).stopAllEndpoints()
     }
 
+    /**
+     * Sends a message to all clients, informing them of all the members of the current lobby
+     */
+    private fun notifyClientsOfClients(members: MutableList<ClientDetailsModel>) {
+        val content = LobbyUpdateMessage(members)
+        val payload = Payload.fromBytes(Gson().toJson(content).toByteArray())
+        Nearby.getConnectionsClient(requireContext()).sendPayload(members.map { it.id }, payload)
+    }
 }
 
 

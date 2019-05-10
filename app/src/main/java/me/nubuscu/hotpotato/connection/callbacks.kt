@@ -5,7 +5,9 @@ import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
 import com.google.android.gms.nearby.connection.PayloadCallback
-import me.nubuscu.hotpotato.model.ActiveClientModel
+import com.google.gson.Gson
+import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
+import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.util.DataHolder
 
 /**
@@ -13,10 +15,10 @@ import me.nubuscu.hotpotato.util.DataHolder
  */
 class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsViewModel) :
     ConnectionLifecycleCallback() {
-    private val tentativeConnections = mutableSetOf<ActiveClientModel>()
+    private val tentativeConnections = mutableSetOf<ClientDetailsModel>()
 
     override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-        tentativeConnections.add(ActiveClientModel(endpointId, connectionInfo.endpointName))
+        tentativeConnections.add(ClientDetailsModel(endpointId, connectionInfo.endpointName))
         Nearby.getConnectionsClient(DataHolder.instance.context.get()!!).acceptConnection(endpointId, PayloadCallback)
     }
 
@@ -27,7 +29,7 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
             ConnectionsStatusCodes.STATUS_OK -> {
                 Log.d("FOO", "hey, that's pretty good")
                 val list = viewModel.connected.value ?: mutableListOf()
-                list.add(client ?: ActiveClientModel(endpointId, "Unknown"))
+                list.add(client ?: ClientDetailsModel(endpointId, "Unknown"))
                 viewModel.connected.postValue(list)
             }
             ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> Log.d("FOO", "oh no")
@@ -53,10 +55,15 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
  */
 object PayloadCallback : PayloadCallback() {
     override fun onPayloadReceived(endpointId: String, payload: Payload) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        payload.asBytes()?.let { bytes ->
+
+            val obj = Gson().fromJson(String(bytes), LobbyUpdateMessage::class.java)
+            Log.d("FOO", obj.allPlayers.first().toString())
+        }
     }
 
     override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //bytes payloads are sent in one chunk, no need to wait for this
+        //do nothing
     }
 }

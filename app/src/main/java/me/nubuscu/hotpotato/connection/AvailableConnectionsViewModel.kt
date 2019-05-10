@@ -2,7 +2,7 @@ package me.nubuscu.hotpotato.connection
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import me.nubuscu.hotpotato.model.ActiveClientModel
+import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.JoinableGameModel
 
 class AvailableConnectionsViewModel: ViewModel() {
@@ -11,8 +11,8 @@ class AvailableConnectionsViewModel: ViewModel() {
         MutableLiveData<MutableList<JoinableGameModel>>()
     }
     //A list of other players that have connected to your device
-    val connected: MutableLiveData<MutableList<ActiveClientModel>> by lazy {
-        MutableLiveData<MutableList<ActiveClientModel>>()
+    val connected: MutableLiveData<MutableList<ClientDetailsModel>> by lazy {
+        MutableLiveData<MutableList<ClientDetailsModel>>()
     }
 }
 
