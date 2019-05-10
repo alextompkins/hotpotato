@@ -16,7 +16,7 @@ import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo
 import com.google.android.gms.nearby.connection.DiscoveryOptions
 import com.google.android.gms.nearby.connection.EndpointDiscoveryCallback
 import com.google.android.gms.nearby.connection.Strategy
-import me.nubuscu.hotpotato.JoinableGameModel
+import me.nubuscu.hotpotato.model.JoinableGameModel
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
@@ -41,7 +41,7 @@ class JoinGameFragment : Fragment() {
         vmAvailableConnections = ViewModelProviders.of(requireActivity()).get(AvailableConnectionsViewModel::class.java)
         joinableGamesList = view.findViewById(R.id.joinableGamesList)
         joinableGamesList.layoutManager = LinearLayoutManager(context)
-        vmAvailableConnections.connections.observe(this, Observer { newGames ->
+        vmAvailableConnections.joinable.observe(this, Observer { newGames ->
             Log.d("FOO", "vm observer triggered")
             if (newGames != null) {
                 Log.d("FOO", "$newGames")
@@ -70,19 +70,25 @@ class JoinGameFragment : Fragment() {
             .startDiscovery(serviceId, object : EndpointDiscoveryCallback() {
                 override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
                     Log.d("FOO", "found endpoint $endpointId, info: ${info.endpointName} -- ${info.serviceId}")
-                    val newGames = vmAvailableConnections.connections.value ?: mutableListOf()
-                    newGames.add(JoinableGameModel(endpointId, info.endpointName, info.serviceId))
-                    vmAvailableConnections.connections.postValue(newGames)
+                    val newGames = vmAvailableConnections.joinable.value ?: mutableListOf()
+                    newGames.add(
+                        JoinableGameModel(
+                            endpointId,
+                            info.endpointName,
+                            info.serviceId
+                        )
+                    )
+                    vmAvailableConnections.joinable.postValue(newGames)
                 }
 
                 override fun onEndpointLost(endpointId: String) {
                     Log.i("network", "lost endpoint $endpointId")
-                    val newGames = vmAvailableConnections.connections.value ?: mutableListOf()
+                    val newGames = vmAvailableConnections.joinable.value ?: mutableListOf()
                     for (game in newGames) {
 
                     }
                     newGames.retainAll { it.endpointId != endpointId }
-                    vmAvailableConnections.connections.postValue(newGames)
+                    vmAvailableConnections.joinable.postValue(newGames)
                 }
             }, discoveryOptions)
             .addOnSuccessListener { Log.i("network", "started discovering") }
@@ -92,7 +98,7 @@ class JoinGameFragment : Fragment() {
     private fun stopDiscovering() {
         //empty the list for next time we start searching
         try {
-            vmAvailableConnections.connections.postValue(mutableListOf())
+            vmAvailableConnections.joinable.postValue(mutableListOf())
         } catch (e: UninitializedPropertyAccessException) {
             //this happens once on startup
         }
@@ -102,10 +108,10 @@ class JoinGameFragment : Fragment() {
     private fun connectTo(game: JoinableGameModel) {
         Log.d("FOO", "connectTo triggered")
         Nearby.getConnectionsClient(requireContext())
-            .requestConnection(hostNickname, game.endpointId, ConnectionLifecycleCallback)
+            .requestConnection(hostNickname, game.endpointId, ConnectionLifecycleCallback(vmAvailableConnections))
             .addOnSuccessListener {
                 Log.i("network", "successfully requested connection to ${game.endpointId}")
                 stopDiscovering()
-            }.addOnFailureListener { Log.i("network", "failed to connect to ${game.endpointId}") }
+            }.addOnFailureListener { e -> Log.e("network", "failed to connect to ${game.endpointId}", e) }
     }
 }

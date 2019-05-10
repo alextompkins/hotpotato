@@ -6,6 +6,9 @@ import androidx.fragment.app.FragmentPagerAdapter
 import me.nubuscu.hotpotato.menu.HostGameFragment
 import me.nubuscu.hotpotato.menu.JoinGameFragment
 
+/**
+ * Adapter to allow the main menu screen to tab between the join and host game fragments
+ */
 class MenuPagerAdapter(fm: FragmentManager): FragmentPagerAdapter(fm) {
 
     private var fragments = listOf(JoinGameFragment(), HostGameFragment())
