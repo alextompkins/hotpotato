@@ -1,12 +1,14 @@
 package me.nubuscu.hotpotato
 
 import android.content.Context
+import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -38,7 +40,9 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     private var acceleration: FloatArray = FloatArray(9) { 0f }
     private var geomagnetic: FloatArray = FloatArray(9) { 0f }
     private var orientation: FloatArray = FloatArray(3) { 0f }
-    
+
+    private lateinit var playerIcons: Array<ImageView>
+
     private var potatoPos = Vector2D(0f, 0f)
     private var potatoVel = Vector2D(0f, 0f)
 
@@ -51,6 +55,16 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         pitchText = findViewById(R.id.pitchText)
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
+
+        playerIcons = arrayOf(
+            findViewById(R.id.p1Icon),
+            findViewById(R.id.p2Icon),
+            findViewById(R.id.p3Icon),
+            findViewById(R.id.p4Icon),
+            findViewById(R.id.p5Icon),
+            findViewById(R.id.p6Icon),
+            findViewById(R.id.p7Icon)
+        )
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -74,6 +88,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
                         sleep(10)
                         runOnUiThread {
                             processPhysics()
+                            runInteractions()
                         }
                     } catch (exc: InterruptedException) {
                         Log.d(TAG, "Physics thread was interrupted")
@@ -108,6 +123,22 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         // Slow down gradually over time
         potatoVel.x *= FRICTION_COEFF
         potatoVel.y *= FRICTION_COEFF
+    }
+
+    private fun runInteractions() {
+        playerIcons.forEach { setHighlighted(it, isOverlapping(it, potatoImage)) }
+    }
+
+    private fun isOverlapping(view: View, other: View): Boolean {
+        return !(view.x < other.x && view.x + view.width < other.x ||
+                other.x < view.x && other.x + other.width < view.x ||
+                view.y < other.y && view.y + view.width < other.y ||
+                other.y < view.y && other.y + other.width < view.y)
+    }
+
+    private fun setHighlighted(icon: ImageView, highlighted: Boolean) {
+        val alpha = if (highlighted) 100 else 0
+        icon.setColorFilter(Color.argb(alpha, 255, 255, 255))
     }
 
     private fun updatePotatoPos(x: Int, y: Int) {
