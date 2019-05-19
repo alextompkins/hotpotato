@@ -8,4 +8,5 @@
     <string name="start_game">Start Game</string>
     <string name="lobby_text">Waiting for players...</string>
     <string name="kick_from_lobby">Kick</string>
+    <string name="action_settings">Settings</string>
 </resources>

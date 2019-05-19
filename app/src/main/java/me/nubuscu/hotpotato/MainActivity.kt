@@ -3,6 +3,8 @@ package me.nubuscu.hotpotato
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager.widget.ViewPager
@@ -20,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setSupportActionBar(findViewById(R.id.toolbar))
         //request dangerous permissions if we need to
         if (Build.VERSION.SDK_INT >= 23) {
             val permissions = arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -40,6 +43,22 @@ class MainActivity : AppCompatActivity() {
         debugInGameButton.setOnClickListener {
             val intent = Intent(this, InGameActivity::class.java)
             startActivity(intent)
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.home, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.settings -> {
+                // TODO open settings activity
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 }
