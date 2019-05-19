@@ -6,8 +6,11 @@ import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
 import com.google.android.gms.nearby.connection.PayloadCallback
 import com.google.gson.Gson
-import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
+import com.google.gson.GsonBuilder
 import me.nubuscu.hotpotato.model.ClientDetailsModel
+import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
+import me.nubuscu.hotpotato.model.dto.Message
+import me.nubuscu.hotpotato.util.serialization.RuntimeTypeAdapterFactory
 import me.nubuscu.hotpotato.util.DataHolder
 
 /**
@@ -54,11 +57,21 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
  * Callback to handle receiving payloads
  */
 object PayloadCallback : PayloadCallback() {
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapterFactory(
+            RuntimeTypeAdapterFactory
+                .of(Message::class.java, "messageType")
+                .registerSubtype(LobbyUpdateMessage::class.java)
+        )
+        .create()
+
     override fun onPayloadReceived(endpointId: String, payload: Payload) {
         payload.asBytes()?.let { bytes ->
 
-            val obj = Gson().fromJson(String(bytes), LobbyUpdateMessage::class.java)
-            Log.d("FOO", obj.allPlayers.first().toString())
+            val message = gson.fromJson(String(bytes), Message::class.java)
+            if (message is LobbyUpdateMessage) {
+                Log.d("FOO", message.allPlayers.first().toString())
+            }
         }
     }
 
