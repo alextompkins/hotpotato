@@ -1,0 +1,18 @@
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <EditTextPreference
+        app:defaultValue="new_player"
+        app:icon="@drawable/ic_person_black_24dp"
+        app:key="username"
+        app:title="@string/username_title"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        app:defaultValue="day_mode"
+        app:entries="@array/theme_entries"
+        app:entryValues="@array/theme_values"
+        app:icon="@drawable/ic_palette_black_24dp"
+        app:key="theme"
+        app:title="@string/theme_title"
+        app:useSimpleSummaryProvider="true" />
+</androidx.preference.PreferenceScreen>
