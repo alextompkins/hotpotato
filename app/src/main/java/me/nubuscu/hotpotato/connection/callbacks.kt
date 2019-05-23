@@ -7,11 +7,12 @@ import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
 import com.google.android.gms.nearby.connection.PayloadCallback
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import me.nubuscu.hotpotato.connection.handler.LobbyUpdateHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.model.dto.Message
-import me.nubuscu.hotpotato.util.serialization.RuntimeTypeAdapterFactory
 import me.nubuscu.hotpotato.util.DataHolder
+import me.nubuscu.hotpotato.util.serialization.RuntimeTypeAdapterFactory
 
 /**
  * Callback used to handle lifecycle events. Called when advertising to host a game
@@ -67,10 +68,9 @@ object PayloadCallback : PayloadCallback() {
 
     override fun onPayloadReceived(endpointId: String, payload: Payload) {
         payload.asBytes()?.let { bytes ->
-
-            val message = gson.fromJson(String(bytes), Message::class.java)
-            if (message is LobbyUpdateMessage) {
-                Log.d("FOO", message.allPlayers.first().toString())
+            when (val message = gson.fromJson(String(bytes), Message::class.java)) {
+                is LobbyUpdateMessage -> LobbyUpdateHandler().handle(message)
+                else -> Log.e("network", "unknown message type received: $message")
             }
         }
     }
