@@ -13,6 +13,7 @@ import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.model.dto.Message
 import me.nubuscu.hotpotato.util.DataHolder
 import me.nubuscu.hotpotato.util.serialization.RuntimeTypeAdapterFactory
+import me.nubuscu.hotpotato.util.serialization.messageGson
 
 /**
  * Callback used to handle lifecycle events. Called when advertising to host a game
@@ -58,17 +59,10 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
  * Callback to handle receiving payloads
  */
 object PayloadCallback : PayloadCallback() {
-    private val gson: Gson = GsonBuilder()
-        .registerTypeAdapterFactory(
-            RuntimeTypeAdapterFactory
-                .of(Message::class.java, "messageType")
-                .registerSubtype(LobbyUpdateMessage::class.java)
-        )
-        .create()
 
     override fun onPayloadReceived(endpointId: String, payload: Payload) {
         payload.asBytes()?.let { bytes ->
-            when (val message = gson.fromJson(String(bytes), Message::class.java)) {
+            when (val message = messageGson.fromJson(String(bytes), Message::class.java)) {
                 is LobbyUpdateMessage -> LobbyUpdateHandler().handle(message)
                 else -> Log.e("network", "unknown message type received: $message")
             }

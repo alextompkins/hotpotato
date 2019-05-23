@@ -16,13 +16,13 @@ import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.AdvertisingOptions
 import com.google.android.gms.nearby.connection.Payload
 import com.google.android.gms.nearby.connection.Strategy
-import com.google.gson.Gson
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
 import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.serviceId
+import me.nubuscu.hotpotato.util.serialization.messageGson
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -104,8 +104,9 @@ class HostGameFragment : Fragment() {
      * Sends a message to all clients, informing them of all the members of the current lobby
      */
     private fun notifyClientsOfClients(members: MutableList<ClientDetailsModel>) {
+
         val content = LobbyUpdateMessage(members)
-        val payload = Payload.fromBytes(Gson().toJson(content).toByteArray())
+        val payload = Payload.fromBytes(messageGson.toJson(content).toByteArray())
         Nearby.getConnectionsClient(requireContext()).sendPayload(members.map { it.id }, payload)
     }
 }
