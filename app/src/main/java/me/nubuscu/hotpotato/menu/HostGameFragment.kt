@@ -104,7 +104,6 @@ class HostGameFragment : Fragment() {
      * Sends a message to all clients, informing them of all the members of the current lobby
      */
     private fun notifyClientsOfClients(members: MutableList<ClientDetailsModel>) {
-
         val content = LobbyUpdateMessage(members)
         val payload = Payload.fromBytes(messageGson.toJson(content).toByteArray())
         Nearby.getConnectionsClient(requireContext()).sendPayload(members.map { it.id }, payload)

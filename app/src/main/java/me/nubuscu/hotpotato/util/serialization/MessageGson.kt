@@ -2,6 +2,8 @@ package me.nubuscu.hotpotato.util.serialization
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
+import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
 import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.model.dto.Message
 
@@ -15,7 +17,9 @@ val messageGson: Gson
             .registerTypeAdapterFactory(
                 RuntimeTypeAdapterFactory
                     .of(Message::class.java, "type")
-                    .registerSubtype(LobbyUpdateMessage::class.java, "lobbyupdate")
+                    .registerSubtype(LobbyUpdateMessage::class.java, "lobbyUpdate")
+                    .registerSubtype(GameStateUpdateMessage::class.java, "gameState")
+                    .registerSubtype(InGameUpdateMessage::class.java, "inGame")
             )
             .create()
     }
