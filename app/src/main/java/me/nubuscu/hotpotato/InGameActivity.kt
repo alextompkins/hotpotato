@@ -30,7 +30,6 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     private val TAG = "InGameActivity"
 
     private lateinit var physicsThread: PhysicsThread
-    private val pauseLock = Object()
 
     private lateinit var rollText: TextView
     private lateinit var pitchText: TextView
@@ -80,7 +79,16 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     }
 
     inner class PhysicsThread : Thread() {
+        private val pauseLock = Object()
         var paused = false
+            set(value) {
+                field = value
+                if (!value) {
+                    synchronized(pauseLock) {
+                        physicsThread.pauseLock.notifyAll()
+                    }
+                }
+            }
 
         override fun run() {
             while (!isInterrupted) {
@@ -160,11 +168,8 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
         sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI)
 
-        synchronized (pauseLock) {
-            // Unblock thread
-            physicsThread.paused = false
-            pauseLock.notifyAll()
-        }
+        // Unblock thread
+        physicsThread.paused = false
     }
 
     override fun onPause() {
