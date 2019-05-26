@@ -14,6 +14,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import me.nubuscu.hotpotato.util.GameInfoHolder
 import kotlin.math.roundToInt
 
 
@@ -72,6 +74,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
 
         physicsThread = PhysicsThread()
         physicsThread.start()
+        isPlaying = GameInfoHolder.instance.isHost
 
         enableFullscreen()
     }
@@ -214,4 +217,15 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
     }
+
+    var isPlaying: Boolean = false
+        set(value) {
+            physicsThread.paused = !value
+            potatoImage.isVisible = value
+            if (!value) {
+                playerIcons.forEach { setHighlighted(it, false) }
+            }
+            field = value
+        }
+
 }
