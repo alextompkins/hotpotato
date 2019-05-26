@@ -16,11 +16,12 @@ import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo
 import com.google.android.gms.nearby.connection.DiscoveryOptions
 import com.google.android.gms.nearby.connection.EndpointDiscoveryCallback
 import com.google.android.gms.nearby.connection.Strategy
-import me.nubuscu.hotpotato.model.JoinableGameModel
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
+import me.nubuscu.hotpotato.model.JoinableGameModel
 import me.nubuscu.hotpotato.serviceId
+import me.nubuscu.hotpotato.util.GameInfoHolder
 
 
 class JoinGameFragment : Fragment() {
@@ -56,6 +57,7 @@ class JoinGameFragment : Fragment() {
         try {
             if (isVisibleToUser) {
                 startDiscovering()
+                GameInfoHolder.instance.isHost = false
             } else {
                 stopDiscovering()
             }

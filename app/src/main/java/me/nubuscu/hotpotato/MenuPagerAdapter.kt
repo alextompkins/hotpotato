@@ -9,7 +9,7 @@ import me.nubuscu.hotpotato.menu.JoinGameFragment
 /**
  * Adapter to allow the main menu screen to tab between the join and host game fragments
  */
-class MenuPagerAdapter(fm: FragmentManager): FragmentPagerAdapter(fm) {
+class MenuPagerAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
     private var fragments = listOf(JoinGameFragment(), HostGameFragment())
     private var fragmentTitles = listOf("Join Game", "Host Game") //TODO set titles via static string values

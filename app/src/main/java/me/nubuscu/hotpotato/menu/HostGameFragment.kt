@@ -1,12 +1,13 @@
 package me.nubuscu.hotpotato.menu
 
 
-//import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -14,25 +15,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.AdvertisingOptions
-import com.google.android.gms.nearby.connection.Payload
 import com.google.android.gms.nearby.connection.Strategy
+import me.nubuscu.hotpotato.InGameActivity
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
-import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.model.ClientDetailsModel
+import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
+import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.serviceId
-import me.nubuscu.hotpotato.util.serialization.messageGson
+import me.nubuscu.hotpotato.util.GameInfoHolder
+import me.nubuscu.hotpotato.util.sendToNearbyEndpoints
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- *
- */
 class HostGameFragment : Fragment() {
 
     var hostNickname = "Jimothy" //TODO load this from preferences
@@ -59,6 +54,16 @@ class HostGameFragment : Fragment() {
                 notifyClientsOfClients(newClients)
             }
         })
+        val startGameButton: Button = view.findViewById(R.id.startGameButton)
+        startGameButton.setOnClickListener {
+            sendToNearbyEndpoints(
+                GameStateUpdateMessage(true),
+                vmAvailableConnections.connected.value?.map { it.id } ?: listOf(),
+                requireContext())
+            GameInfoHolder.instance.endpoints = vmAvailableConnections.connected.value?.toSet() ?: setOf()
+            val intent = Intent(requireContext(), InGameActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     override fun setUserVisibleHint(isVisibleToUser: Boolean) {
@@ -66,6 +71,7 @@ class HostGameFragment : Fragment() {
         try {
             if (isVisibleToUser) {
                 startAdvertising()
+                GameInfoHolder.instance.isHost = true
             } else {
                 stopAdvertising()
                 clearConnections()
@@ -105,8 +111,7 @@ class HostGameFragment : Fragment() {
      */
     private fun notifyClientsOfClients(members: MutableList<ClientDetailsModel>) {
         val content = LobbyUpdateMessage(members)
-        val payload = Payload.fromBytes(messageGson.toJson(content).toByteArray())
-        Nearby.getConnectionsClient(requireContext()).sendPayload(members.map { it.id }, payload)
+        sendToNearbyEndpoints(content, members.map { it.id }, requireContext())
     }
 }
 
