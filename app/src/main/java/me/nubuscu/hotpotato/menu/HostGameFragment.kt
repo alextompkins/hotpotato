@@ -66,19 +66,16 @@ class HostGameFragment : Fragment() {
         }
     }
 
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        super.setUserVisibleHint(isVisibleToUser)
-        try {
-            if (isVisibleToUser) {
-                startAdvertising()
-                GameInfoHolder.instance.isHost = true
-            } else {
-                stopAdvertising()
-                clearConnections()
-            }
-        } catch (e: IllegalStateException) {
-            //oops..?
-        }
+    override fun onResume() {
+        super.onResume()
+        startAdvertising()
+        GameInfoHolder.instance.isHost = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopAdvertising()
+        clearConnections()
     }
 
     private fun startAdvertising() {

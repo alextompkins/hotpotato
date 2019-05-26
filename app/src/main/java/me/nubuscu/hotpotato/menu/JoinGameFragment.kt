@@ -52,18 +52,15 @@ class JoinGameFragment : Fragment() {
         })
     }
 
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        super.setUserVisibleHint(isVisibleToUser)
-        try {
-            if (isVisibleToUser) {
-                startDiscovering()
-                GameInfoHolder.instance.isHost = false
-            } else {
-                stopDiscovering()
-            }
-        } catch (e: IllegalStateException) {
-            //oops
-        }
+    override fun onResume() {
+        super.onResume()
+        startDiscovering()
+        GameInfoHolder.instance.isHost = false
+    }
+
+    override fun onPause() {
+        stopDiscovering()
+        super.onPause()
     }
 
     private fun startDiscovering() {
