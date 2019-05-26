@@ -1,17 +1,21 @@
 package me.nubuscu.hotpotato.connection.handler
 
 import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
+import me.nubuscu.hotpotato.util.DataHolder
+import me.nubuscu.hotpotato.util.GameInfoHolder
+import me.nubuscu.hotpotato.util.sendToNearbyEndpoint
 
-class InGameUpdateHandler: PayloadHandler<InGameUpdateMessage> {
+class InGameUpdateHandler : PayloadHandler<InGameUpdateMessage> {
     override fun handle(message: InGameUpdateMessage) {
-        /*
-        if (amHost && message.dest != me) {
-            send(message, message.dest)
-        } else {
-            toggle to the bit where I'm playing the game
+        val info = GameInfoHolder.instance
+        if (!info.messageIsForMe(message.dest)) {
+            if (message.dest in info.endpoints.map { it.id }) {
+                sendToNearbyEndpoint(message, message.dest, DataHolder.instance.context.get())
+            }
+            return
         }
-         */
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //The message is for me, process it
+        //TODO play the game with the time remaining in the message
     }
 
 }
