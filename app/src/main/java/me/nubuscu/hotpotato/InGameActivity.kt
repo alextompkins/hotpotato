@@ -17,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import me.nubuscu.hotpotato.util.GameInfoHolder
+import tyrantgit.explosionfield.ExplosionField
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -40,6 +41,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var pitchText: TextView
     private lateinit var container: LinearLayout
     private lateinit var potatoImage: ImageView
+    private lateinit var potatoExplosion: ExplosionField
     private lateinit var sensorManager: SensorManager
     private lateinit var accelerometer: Sensor
     private lateinit var magnetometer: Sensor
@@ -64,6 +66,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         pitchText = findViewById(R.id.pitchText)
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
+        potatoExplosion = ExplosionField.attach2Window(this)
 
         playerIcons = arrayOf(
             findViewById(R.id.p1Icon),
@@ -258,6 +261,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
 
             override fun onFinish() {
                 remainingTimeText.text = "0s remaining"
+                potatoExplosion.explode(potatoImage)
                 Toast.makeText(this@InGameActivity, "The potato exploded.", Toast.LENGTH_SHORT).show()
                 isPlaying = false
             }
