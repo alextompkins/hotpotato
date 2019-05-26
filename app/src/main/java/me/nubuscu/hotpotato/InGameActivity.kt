@@ -7,19 +7,23 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
 import me.nubuscu.hotpotato.util.GameInfoHolder
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 
 const val FRICTION_COEFF = 0.95f
+const val MIN_POTATO_DURATION = 5 * 1000L
+const val MAX_POTATO_DURATION = 6 * 1000L
 
 
 data class Vector2D(var x: Float, var y: Float)
@@ -32,6 +36,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var physicsThread: PhysicsThread
 
     private lateinit var rollText: TextView
+    private lateinit var remainingTimeText: TextView
     private lateinit var pitchText: TextView
     private lateinit var container: LinearLayout
     private lateinit var potatoImage: ImageView
@@ -47,12 +52,15 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     private var potatoPos = Vector2D(0f, 0f)
     private var potatoVel = Vector2D(0f, 0f)
 
+    private var countdownToExplode: CountDownTimer? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_in_game)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         rollText = findViewById(R.id.rollText)
+        remainingTimeText = findViewById(R.id.remainingTimeText)
         pitchText = findViewById(R.id.pitchText)
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
@@ -74,6 +82,9 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         physicsThread = PhysicsThread()
         physicsThread.start()
         isPlaying = GameInfoHolder.instance.isHost
+        if (isPlaying) {
+            onReceivePotato()
+        }
 
         enableFullscreen()
     }
@@ -178,6 +189,10 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
 
         // Block thread
         physicsThread.paused = true
+
+        // TODO save amount of time remaining and handle correctly onResume
+        countdownToExplode?.cancel()
+        countdownToExplode = null
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -226,11 +241,26 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     var isPlaying: Boolean = false
         set(value) {
             physicsThread.paused = !value
-            potatoImage.isVisible = value
             if (!value) {
                 playerIcons.forEach { setHighlighted(it, false) }
             }
             field = value
         }
 
+    private fun onReceivePotato() {
+        val currentTime = System.currentTimeMillis()
+        val potatoDuration = Random(currentTime).nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
+        countdownToExplode = object : CountDownTimer(potatoDuration, 100) {
+            override fun onTick(millisUntilFinished: Long) {
+                Log.i(TAG, "countdownToExplode.onTick()")
+                remainingTimeText.text = "${millisUntilFinished / 1000}s remaining"
+            }
+
+            override fun onFinish() {
+                remainingTimeText.text = "0s remaining"
+                Toast.makeText(this@InGameActivity, "The potato exploded.", Toast.LENGTH_SHORT).show()
+                isPlaying = false
+            }
+        }.start()
+    }
 }

@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.tabs.TabLayout
 import me.nubuscu.hotpotato.util.DataHolder
+import me.nubuscu.hotpotato.util.GameInfoHolder
 import java.lang.ref.WeakReference
 
 const val serviceId = "me.nubuscu.hotpotato"
@@ -41,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         // TODO remove debug button
         val debugInGameButton: Button = findViewById(R.id.debugInGameButton)
         debugInGameButton.setOnClickListener {
+            GameInfoHolder.instance.isHost = true
             val intent = Intent(this, InGameActivity::class.java)
             startActivity(intent)
         }
