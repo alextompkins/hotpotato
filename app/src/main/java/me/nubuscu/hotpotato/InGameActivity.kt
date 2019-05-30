@@ -16,7 +16,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import me.nubuscu.hotpotato.model.ClientDetailsModel
+import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
+import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
 import me.nubuscu.hotpotato.util.GameInfoHolder
+import me.nubuscu.hotpotato.util.sendToAllNearbyEndpoints
 import tyrantgit.explosionfield.ExplosionField
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -49,7 +54,8 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     private var geomagnetic: FloatArray = FloatArray(9) { 0f }
     private var orientation: FloatArray = FloatArray(3) { 0f }
 
-    private lateinit var playerIcons: Array<ImageView>
+    //    private lateinit var playerIcons: Array<ImageView>
+    private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
 
     private var potatoPos = Vector2D(0f, 0f)
     private var potatoVel = Vector2D(0f, 0f)
@@ -68,7 +74,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         potatoImage = findViewById(R.id.potatoImage)
         potatoExplosion = ExplosionField.attach2Window(this)
 
-        playerIcons = arrayOf(
+        val playerIcons: Array<ImageView> = arrayOf(
             findViewById(R.id.p1Icon),
             findViewById(R.id.p2Icon),
             findViewById(R.id.p3Icon),
@@ -77,6 +83,9 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
             findViewById(R.id.p6Icon),
             findViewById(R.id.p7Icon)
         )
+        playerIcons.forEach { it.isVisible = false }
+        playerMapping = GameInfoHolder.instance.endpoints.zip(playerIcons)
+        playerMapping.forEach { (_, icon) -> icon.isVisible = true }
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -85,10 +94,6 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
         physicsThread = PhysicsThread()
         physicsThread.start()
         isPlaying = GameInfoHolder.instance.isHost
-        if (isPlaying) {
-            onReceivePotato()
-        }
-
         enableFullscreen()
     }
 
@@ -126,7 +131,6 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun processPhysics() {
-        Log.i(TAG, "processPhysics()")
         val maxX = container.width - potatoImage.drawable.intrinsicWidth
         val maxY = container.height - potatoImage.drawable.intrinsicHeight
         
@@ -153,7 +157,14 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun runInteractions() {
-        playerIcons.forEach { setHighlighted(it, isOverlapping(it, potatoImage)) }
+        playerMapping.forEach { (details, icon) ->
+            if (isOverlapping(icon, potatoImage)) {
+                setHighlighted(icon, true)
+                sendToAllNearbyEndpoints(InGameUpdateMessage(5000, details.id), this)
+            } else {
+                setHighlighted(icon, false)
+            }
+        }
     }
 
     private fun isOverlapping(view: View, other: View): Boolean {
@@ -244,8 +255,11 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
     var isPlaying: Boolean = false
         set(value) {
             physicsThread.paused = !value
-            if (!value) {
-                playerIcons.forEach { setHighlighted(it, false) }
+            potatoImage.isVisible = value
+            if (value) {
+                onReceivePotato()
+            } else {
+                playerMapping.forEach { setHighlighted(it.second, false) }
             }
             field = value
         }
@@ -263,6 +277,7 @@ class InGameActivity : AppCompatActivity(), SensorEventListener {
                 remainingTimeText.text = "0s remaining"
                 potatoExplosion.explode(potatoImage)
                 Toast.makeText(this@InGameActivity, "The potato exploded.", Toast.LENGTH_SHORT).show()
+                sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this@InGameActivity)
                 isPlaying = false
             }
         }.start()

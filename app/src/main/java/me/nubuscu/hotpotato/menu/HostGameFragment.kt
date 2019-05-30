@@ -68,6 +68,7 @@ class HostGameFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        clearConnections()
         startAdvertising()
         GameInfoHolder.instance.isHost = true
     }
@@ -75,7 +76,6 @@ class HostGameFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         stopAdvertising()
-        clearConnections()
     }
 
     private fun startAdvertising() {
