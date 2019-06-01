@@ -11,6 +11,7 @@ import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.nearby.Nearby
@@ -27,10 +28,16 @@ import me.nubuscu.hotpotato.serviceId
 import me.nubuscu.hotpotato.util.GameInfoHolder
 import me.nubuscu.hotpotato.util.sendToNearbyEndpoints
 
-
 class HostGameFragment : Fragment() {
 
-    var hostNickname = "Jimothy" //TODO load this from preferences
+    private var username: String = ""
+        get() {
+            val default = "new player"
+            return PreferenceManager
+                .getDefaultSharedPreferences(context)
+                .getString("username", default)
+                ?: default
+        }
     private lateinit var vmAvailableConnections: AvailableConnectionsViewModel
     private lateinit var joinedClientsList: RecyclerView
 
@@ -82,7 +89,7 @@ class HostGameFragment : Fragment() {
         val advertisingOptions = AdvertisingOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
         Nearby.getConnectionsClient(requireContext())
             .startAdvertising(
-                hostNickname,
+                username,
                 serviceId,
                 ConnectionLifecycleCallback(vmAvailableConnections),
                 advertisingOptions
@@ -111,5 +118,6 @@ class HostGameFragment : Fragment() {
         sendToNearbyEndpoints(content, members.map { it.id }, requireContext())
     }
 }
+
 
 

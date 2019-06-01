@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.nearby.Nearby
@@ -25,8 +26,15 @@ import me.nubuscu.hotpotato.util.GameInfoHolder
 
 
 class JoinGameFragment : Fragment() {
-    var hostNickname = "Tony the Tea Towel Man" //TODO load this from preferences
 
+    private var username: String = ""
+        get() {
+            val default = "new player"
+            return PreferenceManager
+                .getDefaultSharedPreferences(context)
+                .getString("username", default)
+                ?: default
+        }
     private lateinit var vmAvailableConnections: AvailableConnectionsViewModel
     private lateinit var joinableGamesList: RecyclerView
 
@@ -107,7 +115,7 @@ class JoinGameFragment : Fragment() {
     private fun connectTo(game: JoinableGameModel) {
         Log.d("FOO", "connectTo triggered")
         Nearby.getConnectionsClient(requireContext())
-            .requestConnection(hostNickname, game.endpointId, ConnectionLifecycleCallback(vmAvailableConnections))
+            .requestConnection(username, game.endpointId, ConnectionLifecycleCallback(vmAvailableConnections))
             .addOnSuccessListener {
                 Log.i("network", "successfully requested connection to ${game.endpointId}")
                 stopDiscovering()
