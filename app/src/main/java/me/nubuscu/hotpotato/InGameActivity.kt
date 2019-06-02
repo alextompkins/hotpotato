@@ -14,7 +14,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
@@ -33,7 +32,7 @@ const val MAX_POTATO_DURATION = 6 * 1000L
 data class Vector2D(var x: Float, var y: Float)
 
 
-class InGameActivity : AppCompatActivity(), SensorEventListener {
+class InGameActivity : ThemedActivity(), SensorEventListener {
 
     private val TAG = "InGameActivity"
 

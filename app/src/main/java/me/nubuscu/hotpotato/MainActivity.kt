@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
-import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.tabs.TabLayout
 import me.nubuscu.hotpotato.util.DataHolder
@@ -14,7 +13,8 @@ import me.nubuscu.hotpotato.util.GameInfoHolder
 import java.lang.ref.WeakReference
 
 const val serviceId = "me.nubuscu.hotpotato"
-class MainActivity : AppCompatActivity() {
+
+class MainActivity : ThemedActivity() {
 
     private lateinit var adapter: MenuPagerAdapter
     private lateinit var tabLayout: TabLayout
