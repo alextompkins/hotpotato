@@ -1,13 +1,7 @@
 package me.nubuscu.hotpotato
 
-import android.content.Context
 import android.graphics.Color
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
@@ -21,9 +15,9 @@ import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
 import me.nubuscu.hotpotato.scheduling.GameEvent.*
 import me.nubuscu.hotpotato.scheduling.GameScheduler
 import me.nubuscu.hotpotato.util.GameInfoHolder
+import me.nubuscu.hotpotato.util.TiltManager
 import me.nubuscu.hotpotato.util.sendToAllNearbyEndpoints
 import tyrantgit.explosionfield.ExplosionField
-import kotlin.math.roundToInt
 import kotlin.random.Random
 
 
@@ -35,25 +29,15 @@ const val MAX_POTATO_DURATION = 30 * 1000L
 data class Vector2D(var x: Float, var y: Float)
 
 
-class InGameActivity : ThemedActivity(), SensorEventListener {
-
-    private val TAG = "InGameActivity"
-
+class InGameActivity : ThemedActivity() {
     private var scheduler: GameScheduler? = null
     private var setToExpireAt: Long? = null
 
-    private lateinit var rollText: TextView
     private lateinit var remainingTimeText: TextView
-    private lateinit var pitchText: TextView
     private lateinit var container: LinearLayout
     private lateinit var potatoImage: ImageView
     private lateinit var potatoExplosion: ExplosionField
-    private lateinit var sensorManager: SensorManager
-    private lateinit var accelerometer: Sensor
-    private lateinit var magnetometer: Sensor
-    private var acceleration: FloatArray = FloatArray(9) { 0f }
-    private var geomagnetic: FloatArray = FloatArray(9) { 0f }
-    private var orientation: FloatArray = FloatArray(3) { 0f }
+    private lateinit var tiltManager: TiltManager
 
     private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
     private val prevOverlaps: MutableMap<ImageView, Boolean> = mutableMapOf()
@@ -66,9 +50,9 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         setContentView(R.layout.activity_in_game)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        rollText = findViewById(R.id.rollText)
+        tiltManager = TiltManager(this)
+
         remainingTimeText = findViewById(R.id.remainingTimeText)
-        pitchText = findViewById(R.id.pitchText)
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
         potatoImage.setImageResource(
@@ -90,18 +74,13 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         playerMapping = GameInfoHolder.instance.endpoints.zip(playerIcons)
         playerMapping.forEach { (_, icon) -> icon.isVisible = true }
 
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
-
         isPlaying = GameInfoHolder.instance.isHost
     }
 
     override fun onResume() {
         super.onResume()
         enableFullscreen()
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
-        sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI)
+        tiltManager.registerListeners()
 
         // If the user had the potato, restart game scheduler
         if (isPlaying && scheduler == null) {
@@ -125,7 +104,7 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
 
     override fun onPause() {
         super.onPause()
-        sensorManager.unregisterListener(this)
+        tiltManager.unregisterListeners()
 
         // If the game scheduler is running, save the time of potato expiry and kill it
         scheduler?.let {
@@ -186,8 +165,8 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         }
 
         // Update velocities
-        potatoVel.x += orientation[2]
-        potatoVel.y -= orientation[1] * 2
+        potatoVel.x += tiltManager.orientation[2]
+        potatoVel.y -= tiltManager.orientation[1] * 2
 
         // Slow down gradually over time
         potatoVel.x *= FRICTION_COEFF
@@ -274,34 +253,4 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this)
         isPlaying = false
     }
-
-    // TILT SENSING
-    override fun onSensorChanged(event: SensorEvent) {
-        when (event.sensor.type) {
-            Sensor.TYPE_ACCELEROMETER -> acceleration = event.values
-            Sensor.TYPE_MAGNETIC_FIELD -> geomagnetic = event.values
-            else -> Log.d(TAG, "Unknown sensor type: ${event.sensor.stringType}")
-        }
-
-        val rotation = FloatArray(9) { 0f }
-        SensorManager.getRotationMatrix(
-            rotation,
-            null,
-            acceleration,
-            geomagnetic
-        )  // TODO something if false (i.e. device in freefall)
-        SensorManager.getOrientation(rotation, orientation)
-
-        val pitchDeg = orientation[1].toDegrees().roundToInt()
-        val rollDeg = orientation[2].toDegrees().roundToInt()
-
-        rollText.text = "Roll: $rollDeg°"
-        pitchText.text = "Pitch: $pitchDeg°"
-    }
-
-    private fun Float.toDegrees(): Float {
-        return Math.toDegrees(this.toDouble()).toFloat()
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
 }
