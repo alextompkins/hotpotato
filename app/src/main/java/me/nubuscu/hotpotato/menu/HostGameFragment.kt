@@ -67,7 +67,7 @@ class HostGameFragment : Fragment() {
                 GameStateUpdateMessage(true),
                 vmAvailableConnections.connected.value?.map { it.id } ?: listOf(),
                 requireContext())
-            GameInfoHolder.instance.endpoints = vmAvailableConnections.connected.value?.toSet() ?: setOf()
+            GameInfoHolder.instance.endpoints = vmAvailableConnections.connected.value?.toMutableSet() ?: mutableSetOf()
             val intent = Intent(requireContext(), InGameActivity::class.java)
             startActivity(intent)
         }

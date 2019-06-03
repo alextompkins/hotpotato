@@ -11,7 +11,7 @@ class GameInfoHolder {
     }
 
     var isHost: Boolean = false
-    var endpoints: Set<ClientDetailsModel> = setOf()
+    var endpoints: MutableSet<ClientDetailsModel> = mutableSetOf()
 
     /**
      * the Nearby API doesn't know it's own endpoint ID

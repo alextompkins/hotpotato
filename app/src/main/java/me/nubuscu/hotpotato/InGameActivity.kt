@@ -19,7 +19,7 @@ import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
 import me.nubuscu.hotpotato.scheduling.GameScheduler
 import me.nubuscu.hotpotato.util.GameInfoHolder
-import me.nubuscu.hotpotato.util.sendToAllNearbyEndpoints
+import me.nubuscu.hotpotato.util.sendToNearbyEndpoint
 import tyrantgit.explosionfield.ExplosionField
 import kotlin.math.roundToInt
 
@@ -90,8 +90,15 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
-        enableFullscreen()
         isPlaying = GameInfoHolder.instance.isHost
+        recenterPotato()
+        enableFullscreen()
+
+    }
+
+    private fun recenterPotato() {
+        val config = resources.configuration
+        updatePotatoPos(config.screenWidthDp, config.screenHeightDp)
     }
 
     private fun processPhysics() {
@@ -131,7 +138,8 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
                 scheduler?.schedule(taskId, {
                     runOnUiThread {
                         Toast.makeText(this, "Sending to player ${details.id}", Toast.LENGTH_SHORT).show()
-                        sendToAllNearbyEndpoints(InGameUpdateMessage(5000, details.id), this)
+                        sendToNearbyEndpoint(InGameUpdateMessage(5000, details.id), details.id, this)
+                        isPlaying = false
                     }
                 }, 2000)
                 Log.i(TAG, "Scheduled $taskId")
@@ -172,7 +180,9 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI)
 
         // Unblock thread
-        startScheduler()
+        if (isPlaying) {
+            startScheduler()
+        }
     }
 
     override fun onPause() {
@@ -263,6 +273,7 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
     }
 
     private fun onReceivePotato() {
+        Toast.makeText(this, "received the potato", Toast.LENGTH_SHORT).show()
         // TODO
 //        val currentTime = System.currentTimeMillis()
 //        val potatoDuration = Random(currentTime).nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
