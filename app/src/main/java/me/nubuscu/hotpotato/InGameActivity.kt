@@ -67,6 +67,9 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         pitchText = findViewById(R.id.pitchText)
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
+        potatoImage.setImageResource(
+            if (super.currentTheme == "night_mode") R.drawable.ic_bomb_100dp else R.drawable.ic_potato_100dp
+        )
         potatoExplosion = ExplosionField.attach2Window(this)
 
         val playerIcons: Array<ImageView> = arrayOf(
@@ -94,7 +97,7 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
     private fun processPhysics() {
         val maxX = container.width - potatoImage.drawable.intrinsicWidth
         val maxY = container.height - potatoImage.drawable.intrinsicHeight
-        
+
         // Update positions
         potatoPos.x = potatoPos.x.addWithinBounds(potatoVel.x, 0f, maxX.toFloat())
         potatoPos.y = potatoPos.y.addWithinBounds(potatoVel.y, 0f, maxY.toFloat())
@@ -189,7 +192,12 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         }
 
         val rotation = FloatArray(9) { 0f }
-        SensorManager.getRotationMatrix(rotation, null, acceleration, geomagnetic)  // TODO something if false (i.e. device in freefall)
+        SensorManager.getRotationMatrix(
+            rotation,
+            null,
+            acceleration,
+            geomagnetic
+        )  // TODO something if false (i.e. device in freefall)
         SensorManager.getOrientation(rotation, orientation)
 
         val pitchDeg = orientation[1].toDegrees().roundToInt()

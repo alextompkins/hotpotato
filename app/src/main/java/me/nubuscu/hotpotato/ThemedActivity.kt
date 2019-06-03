@@ -7,7 +7,7 @@ import androidx.preference.PreferenceManager
 
 open class ThemedActivity : AppCompatActivity() {
     private val defaultTheme = "day_mode"
-    private lateinit var currentTheme: String
+    protected lateinit var currentTheme: String
     private lateinit var sharedPref: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
