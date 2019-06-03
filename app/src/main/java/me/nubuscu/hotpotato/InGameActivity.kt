@@ -15,18 +15,15 @@ import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
 import me.nubuscu.hotpotato.scheduling.GameEvent.*
 import me.nubuscu.hotpotato.scheduling.GameScheduler
 import me.nubuscu.hotpotato.util.GameInfoHolder
+import me.nubuscu.hotpotato.util.PhysicsObject2D
 import me.nubuscu.hotpotato.util.TiltManager
 import me.nubuscu.hotpotato.util.sendToAllNearbyEndpoints
 import tyrantgit.explosionfield.ExplosionField
 import kotlin.random.Random
 
 
-const val FRICTION_COEFF = 0.95f
 const val MIN_POTATO_DURATION = 5 * 1000L
 const val MAX_POTATO_DURATION = 30 * 1000L
-
-
-data class Vector2D(var x: Float, var y: Float)
 
 
 class InGameActivity : ThemedActivity() {
@@ -36,14 +33,12 @@ class InGameActivity : ThemedActivity() {
     private lateinit var remainingTimeText: TextView
     private lateinit var container: LinearLayout
     private lateinit var potatoImage: ImageView
+    private lateinit var potatoObject: PhysicsObject2D
     private lateinit var potatoExplosion: ExplosionField
     private lateinit var tiltManager: TiltManager
 
     private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
     private val prevOverlaps: MutableMap<ImageView, Boolean> = mutableMapOf()
-
-    private var potatoPos = Vector2D(0f, 0f)
-    private var potatoVel = Vector2D(0f, 0f)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +53,7 @@ class InGameActivity : ThemedActivity() {
         potatoImage.setImageResource(
             if (currentTheme == "night_mode") R.drawable.ic_bomb_100dp else R.drawable.ic_potato_100dp
         )
+        potatoObject = PhysicsObject2D()
         potatoExplosion = ExplosionField.attach2Window(this)
 
         val playerIcons: Array<ImageView> = arrayOf(
@@ -148,44 +144,19 @@ class InGameActivity : ThemedActivity() {
 
     // MOVING POTATO
     private fun processPhysics() {
-        val maxX = container.width - potatoImage.drawable.intrinsicWidth
-        val maxY = container.height - potatoImage.drawable.intrinsicHeight
-
-        // Update positions
-        potatoPos.x = potatoPos.x.addWithinBounds(potatoVel.x, 0f, maxX.toFloat())
-        potatoPos.y = potatoPos.y.addWithinBounds(potatoVel.y, 0f, maxY.toFloat())
-        updatePotatoPos(potatoPos.x.toInt(), potatoPos.y.toInt())
-
-        // If on edge, bounce
-        if (potatoPos.x == 0f || potatoPos.x == maxX.toFloat()) {
-            potatoVel.x = -potatoVel.x
-        }
-        if (potatoPos.y == 0f || potatoPos.y == maxY.toFloat()) {
-            potatoVel.y = -potatoVel.y
-        }
-
-        // Update velocities
-        potatoVel.x += tiltManager.orientation[2]
-        potatoVel.y -= tiltManager.orientation[1] * 2
-
-        // Slow down gradually over time
-        potatoVel.x *= FRICTION_COEFF
-        potatoVel.y *= FRICTION_COEFF
+        potatoObject.processPhysics(
+            tiltManager.orientation[2],
+            tiltManager.orientation[1] * 2,
+            (container.width - potatoImage.drawable.intrinsicWidth).toFloat(),
+            (container.height - potatoImage.drawable.intrinsicHeight).toFloat()
+        )
+        updatePotatoPos(potatoObject.pos.x, potatoObject.pos.y)
     }
 
-    private fun Float.addWithinBounds(other: Float, min: Float, max: Float): Float {
-        val added = this + other
-        return when {
-            added < min -> min
-            added > max -> max
-            else -> added
-        }
-    }
-
-    private fun updatePotatoPos(x: Int, y: Int) {
+    private fun updatePotatoPos(x: Float, y: Float) {
         val layoutParams = potatoImage.layoutParams as LinearLayout.LayoutParams
-        layoutParams.leftMargin = x
-        layoutParams.topMargin = y
+        layoutParams.leftMargin = x.toInt()
+        layoutParams.topMargin = y.toInt()
         layoutParams.rightMargin = 0
         layoutParams.bottomMargin = 0
         potatoImage.layoutParams = layoutParams
