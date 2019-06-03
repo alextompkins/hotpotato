@@ -1,23 +1,16 @@
 package me.nubuscu.hotpotato.scheduling
 
-import android.util.Log
 import java.util.Timer
 import java.util.TimerTask
 
 class GameScheduler {
     private val timer: Timer = Timer("gameScheduler", true)
-    private val tasks: MutableMap<String, TimerTask> = mutableMapOf()
+    private val tasks: MutableMap<String, GameTask> = mutableMapOf()
 
     fun schedule(taskId: String, task: () -> Unit, delay: Long, isRepeating: Boolean = false) {
-        val gameTask = object : TimerTask() {
-            override fun run() {
-                task()
-                if (!isRepeating) {
-                    tasks.remove(taskId)
-                }
-            }
-        }
-        Log.i("foo", "Scheduled new task with ID $taskId")
+        val postExecute: () -> Unit = if (isRepeating) ({}) else ({ tasks.remove(taskId) })
+        val gameTask = GameTask(task, postExecute, delay, isRepeating)
+
         when (isRepeating) {
             true -> timer.scheduleAtFixedRate(gameTask, delay, delay)
             false -> timer.schedule(gameTask, delay)
@@ -25,9 +18,7 @@ class GameScheduler {
         tasks[taskId] = gameTask
     }
 
-    fun getScheduledTime(taskId: String): Long {
-        return tasks[taskId]?.scheduledExecutionTime() ?: -1
-    }
+    fun getScheduledTime(taskId: String): Long? = tasks[taskId]?.nextExecutionTime
 
     fun cancelTask(taskId: String) {
         val task = tasks[taskId] ?: return
@@ -35,17 +26,22 @@ class GameScheduler {
         tasks.remove(taskId)
     }
 
-    fun kill() {
-        timer.cancel()
+    fun kill() = timer.cancel()
+}
+
+class GameTask(
+    private val execute: () -> Unit,
+    private val postExecute: () -> Unit,
+    private val delay: Long,
+    private val isRepeating: Boolean = false
+): TimerTask() {
+    var nextExecutionTime = System.currentTimeMillis() + delay
+
+    override fun run() {
+        execute()
+        postExecute()
+        if (isRepeating) {
+            nextExecutionTime = System.currentTimeMillis() + delay
+        }
     }
-
-    // POTATO COUNTDOWN
-    // PHYSICS TICK repeating 10 ms
-    //      repeating
-    // POTATO PLAYER ICON OVERLAPS CHECK
-    //      repeating
-    // SEND TO OTHER PLAYER
-    //      after 3s
-    //      cancellable
-
 }
