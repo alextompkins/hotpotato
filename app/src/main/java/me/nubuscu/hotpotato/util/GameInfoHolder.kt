@@ -1,5 +1,6 @@
 package me.nubuscu.hotpotato.util
 
+import android.util.Log
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 
 /**
@@ -12,12 +13,9 @@ class GameInfoHolder {
 
     var isHost: Boolean = false
     var endpoints: MutableSet<ClientDetailsModel> = mutableSetOf()
-
-    /**
-     * the Nearby API doesn't know it's own endpoint ID
-     * therefore, assuming we're using P2P_STAR:
-     * if I receive a message with a dest I don't know, it must be for me
-     */
-    fun messageIsForMe(destEndpoint: String) = !endpoints.map { it.id }.contains(destEndpoint)
-
+        set(value) {
+            field = value
+            Log.d("test", "known endpoints in GameInfoHolder: $endpoints")
+        }
+    var myEndpointId: String? = null
 }

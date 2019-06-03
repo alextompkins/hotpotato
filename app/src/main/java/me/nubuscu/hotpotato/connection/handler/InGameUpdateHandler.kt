@@ -8,7 +8,7 @@ import me.nubuscu.hotpotato.util.sendToNearbyEndpoint
 class InGameUpdateHandler : PayloadHandler<InGameUpdateMessage> {
     override fun handle(message: InGameUpdateMessage) {
         val info = GameInfoHolder.instance
-        if (!info.messageIsForMe(message.dest)) {
+        if (info.myEndpointId != message.dest) {
             if (message.dest in info.endpoints.map { it.id }) {
                 sendToNearbyEndpoint(message, message.dest, DataHolder.instance.context.get())
             }

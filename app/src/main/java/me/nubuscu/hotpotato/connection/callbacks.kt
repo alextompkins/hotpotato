@@ -8,12 +8,12 @@ import com.google.android.gms.nearby.connection.PayloadCallback
 import me.nubuscu.hotpotato.connection.handler.GameStateUpdateHandler
 import me.nubuscu.hotpotato.connection.handler.InGameUpdateHandler
 import me.nubuscu.hotpotato.connection.handler.LobbyUpdateHandler
+import me.nubuscu.hotpotato.connection.handler.YouAreHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
-import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
-import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
-import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
-import me.nubuscu.hotpotato.model.dto.Message
+import me.nubuscu.hotpotato.model.dto.*
 import me.nubuscu.hotpotato.util.DataHolder
+import me.nubuscu.hotpotato.util.GameInfoHolder
+import me.nubuscu.hotpotato.util.sendToNearbyEndpoint
 import me.nubuscu.hotpotato.util.serialization.messageGson
 
 /**
@@ -36,7 +36,10 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
                 Log.d("FOO", "hey, that's pretty good")
                 val list = viewModel.connected.value ?: mutableListOf()
                 list.add(client ?: ClientDetailsModel(endpointId, "Unknown"))
+                GameInfoHolder.instance.endpoints.addAll(list)
                 viewModel.connected.postValue(list)
+
+                sendToNearbyEndpoint(YouAreMessage(endpointId), endpointId, DataHolder.instance.context.get())
             }
             ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> Log.d("FOO", "oh no")
             ConnectionsStatusCodes.STATUS_ERROR -> Log.d("FOO", "that's not good")
@@ -67,6 +70,7 @@ object PayloadCallback : PayloadCallback() {
                 is LobbyUpdateMessage -> LobbyUpdateHandler().handle(message)
                 is GameStateUpdateMessage -> GameStateUpdateHandler().handle(message)
                 is InGameUpdateMessage -> InGameUpdateHandler().handle(message)
+                is YouAreMessage -> YouAreHandler().handle(message)
                 else -> Log.e("network", "unknown message type received: $message")
             }
         }
