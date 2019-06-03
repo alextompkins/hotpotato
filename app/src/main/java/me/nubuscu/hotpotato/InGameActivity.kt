@@ -97,6 +97,77 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         isPlaying = GameInfoHolder.instance.isHost
     }
 
+    override fun onResume() {
+        super.onResume()
+        enableFullscreen()
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI)
+
+        // If the user had the potato, restart game scheduler
+        if (isPlaying && scheduler == null) {
+            startScheduler()
+            // If the potato was set to expire, resume countdown
+            setToExpireAt?.let {
+                startPotatoCountdown(it - System.currentTimeMillis())
+            }
+        }
+    }
+
+    private fun enableFullscreen() {
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_IMMERSIVE or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+
+        // If the game scheduler is running, save the time of potato expiry and kill it
+        scheduler?.let {
+            setToExpireAt = it.getScheduledTime(POTATO_EXPIRE.name)
+            it.kill()
+            scheduler = null
+        }
+    }
+
+    private var isPlaying = false
+        set(value) {
+            potatoImage.isVisible = value
+            if (value) {
+                startScheduler()
+                val potatoDuration = Random(System.currentTimeMillis())
+                    .nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
+                startPotatoCountdown(potatoDuration)
+            } else {
+                scheduler?.kill()
+                playerMapping.forEach { setHighlighted(it.second, false) }
+            }
+            field = value
+        }
+
+    private val timeUntilExpiry: Long
+    get() {
+        val expiryTime = scheduler?.getScheduledTime(POTATO_EXPIRE.name)
+        return if (expiryTime == null) 0 else expiryTime - System.currentTimeMillis()
+    }
+
+    private fun startScheduler() {
+        scheduler?.kill()
+        scheduler = GameScheduler()
+        scheduler?.schedule(PHYSICS_TICK.name, {
+            runOnUiThread(this::processPhysics)
+        }, 10, true)
+        scheduler?.schedule(OVERLAPS_CHECK.name, {
+            runOnUiThread(this::checkOverlaps)
+        }, 100, true)
+    }
+
+    // MOVING POTATO
     private fun processPhysics() {
         val maxX = container.width - potatoImage.drawable.intrinsicWidth
         val maxY = container.height - potatoImage.drawable.intrinsicHeight
@@ -123,6 +194,25 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         potatoVel.y *= FRICTION_COEFF
     }
 
+    private fun Float.addWithinBounds(other: Float, min: Float, max: Float): Float {
+        val added = this + other
+        return when {
+            added < min -> min
+            added > max -> max
+            else -> added
+        }
+    }
+
+    private fun updatePotatoPos(x: Int, y: Int) {
+        val layoutParams = potatoImage.layoutParams as LinearLayout.LayoutParams
+        layoutParams.leftMargin = x
+        layoutParams.topMargin = y
+        layoutParams.rightMargin = 0
+        layoutParams.bottomMargin = 0
+        potatoImage.layoutParams = layoutParams
+    }
+
+    // CHECKING OVERLAPS
     private fun checkOverlaps() {
         playerMapping.forEach { (details, icon) ->
             val taskId = "${GIVE_POTATO.name}-${details.id}"
@@ -158,121 +248,7 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         icon.setColorFilter(Color.argb(alpha, 255, 255, 255))
     }
 
-    private fun updatePotatoPos(x: Int, y: Int) {
-        val layoutParams = potatoImage.layoutParams as LinearLayout.LayoutParams
-        layoutParams.leftMargin = x
-        layoutParams.topMargin = y
-        layoutParams.rightMargin = 0
-        layoutParams.bottomMargin = 0
-        potatoImage.layoutParams = layoutParams
-    }
-
-    override fun onResume() {
-        super.onResume()
-        enableFullscreen()
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
-        sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI)
-
-        // Unblock thread
-        if (isPlaying && scheduler == null) {
-            startScheduler()
-            setToExpireAt?.let {
-                startPotatoCountdown(it - System.currentTimeMillis())
-            }
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        sensorManager.unregisterListener(this)
-
-        scheduler?.let {
-            setToExpireAt = it.getScheduledTime(POTATO_EXPIRE.name)
-            it.kill()
-            scheduler = null
-        }
-    }
-
-    override fun onSensorChanged(event: SensorEvent) {
-        when (event.sensor.type) {
-            Sensor.TYPE_ACCELEROMETER -> acceleration = event.values
-            Sensor.TYPE_MAGNETIC_FIELD -> geomagnetic = event.values
-            else -> Log.d(TAG, "Unknown sensor type: ${event.sensor.stringType}")
-        }
-
-        val rotation = FloatArray(9) { 0f }
-        SensorManager.getRotationMatrix(
-            rotation,
-            null,
-            acceleration,
-            geomagnetic
-        )  // TODO something if false (i.e. device in freefall)
-        SensorManager.getOrientation(rotation, orientation)
-
-        val pitchDeg = orientation[1].toDegrees().roundToInt()
-        val rollDeg = orientation[2].toDegrees().roundToInt()
-
-        rollText.text = "Roll: $rollDeg°"
-        pitchText.text = "Pitch: $pitchDeg°"
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
-
-    private fun Float.toDegrees(): Float {
-        return Math.toDegrees(this.toDouble()).toFloat()
-    }
-
-    private fun Float.addWithinBounds(other: Float, min: Float, max: Float): Float {
-        val added = this + other
-        return when {
-            added < min -> min
-            added > max -> max
-            else -> added
-        }
-    }
-
-    private fun enableFullscreen() {
-        window.decorView.systemUiVisibility =
-            View.SYSTEM_UI_FLAG_IMMERSIVE or
-                    View.SYSTEM_UI_FLAG_FULLSCREEN or
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-    }
-
-    private var isPlaying = false
-        set(value) {
-            potatoImage.isVisible = value
-            if (value) {
-                startScheduler()
-                val potatoDuration = Random(System.currentTimeMillis())
-                    .nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
-                startPotatoCountdown(potatoDuration)
-            } else {
-                scheduler?.kill()
-                playerMapping.forEach { setHighlighted(it.second, false) }
-            }
-            field = value
-        }
-
-    private val timeUntilExpiry: Long
-    get() {
-        val expiryTime = scheduler?.getScheduledTime(POTATO_EXPIRE.name)
-        return if (expiryTime == null) 0 else expiryTime - System.currentTimeMillis()
-    }
-
-    private fun startScheduler() {
-        scheduler?.kill()
-        scheduler = GameScheduler()
-        scheduler?.schedule(PHYSICS_TICK.name, {
-            runOnUiThread(this::processPhysics)
-        }, 10, true)
-        scheduler?.schedule(OVERLAPS_CHECK.name, {
-            runOnUiThread(this::checkOverlaps)
-        }, 100, true)
-    }
-
+    // POTATO COUNTDOWN
     private fun startPotatoCountdown(timeUntilExpiry: Long) {
         if (timeUntilExpiry < 0) {
             updateTimeUntilPotatoExpiry()
@@ -298,4 +274,34 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this)
         isPlaying = false
     }
+
+    // TILT SENSING
+    override fun onSensorChanged(event: SensorEvent) {
+        when (event.sensor.type) {
+            Sensor.TYPE_ACCELEROMETER -> acceleration = event.values
+            Sensor.TYPE_MAGNETIC_FIELD -> geomagnetic = event.values
+            else -> Log.d(TAG, "Unknown sensor type: ${event.sensor.stringType}")
+        }
+
+        val rotation = FloatArray(9) { 0f }
+        SensorManager.getRotationMatrix(
+            rotation,
+            null,
+            acceleration,
+            geomagnetic
+        )  // TODO something if false (i.e. device in freefall)
+        SensorManager.getOrientation(rotation, orientation)
+
+        val pitchDeg = orientation[1].toDegrees().roundToInt()
+        val rollDeg = orientation[2].toDegrees().roundToInt()
+
+        rollText.text = "Roll: $rollDeg°"
+        pitchText.text = "Pitch: $pitchDeg°"
+    }
+
+    private fun Float.toDegrees(): Float {
+        return Math.toDegrees(this.toDouble()).toFloat()
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
 }
