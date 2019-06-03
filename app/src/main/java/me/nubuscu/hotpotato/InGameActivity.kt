@@ -16,17 +16,20 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import me.nubuscu.hotpotato.model.ClientDetailsModel
+import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
 import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
+import me.nubuscu.hotpotato.scheduling.GameEvent.*
 import me.nubuscu.hotpotato.scheduling.GameScheduler
 import me.nubuscu.hotpotato.util.GameInfoHolder
 import me.nubuscu.hotpotato.util.sendToAllNearbyEndpoints
 import tyrantgit.explosionfield.ExplosionField
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 
 const val FRICTION_COEFF = 0.95f
 const val MIN_POTATO_DURATION = 5 * 1000L
-const val MAX_POTATO_DURATION = 6 * 1000L
+const val MAX_POTATO_DURATION = 30 * 1000L
 
 
 data class Vector2D(var x: Float, var y: Float)
@@ -37,6 +40,7 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
     private val TAG = "InGameActivity"
 
     private var scheduler: GameScheduler? = null
+    private var setToExpireAt: Long? = null
 
     private lateinit var rollText: TextView
     private lateinit var remainingTimeText: TextView
@@ -68,7 +72,7 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
         potatoImage.setImageResource(
-            if (super.currentTheme == "night_mode") R.drawable.ic_bomb_100dp else R.drawable.ic_potato_100dp
+            if (currentTheme == "night_mode") R.drawable.ic_bomb_100dp else R.drawable.ic_potato_100dp
         )
         potatoExplosion = ExplosionField.attach2Window(this)
 
@@ -90,7 +94,6 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
-        enableFullscreen()
         isPlaying = GameInfoHolder.instance.isHost
     }
 
@@ -122,7 +125,7 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
 
     private fun checkOverlaps() {
         playerMapping.forEach { (details, icon) ->
-            val taskId = "GIVE_POTATO_${details.id}"
+            val taskId = "${GIVE_POTATO.name}-${details.id}"
             val nowOverlapping = isOverlapping(icon, potatoImage)
             val prevOverlapping = prevOverlaps[potatoImage] ?: false
 
@@ -134,11 +137,9 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
                         sendToAllNearbyEndpoints(InGameUpdateMessage(5000, details.id), this)
                     }
                 }, 2000)
-                Log.i(TAG, "Scheduled $taskId")
             } else if (prevOverlapping && !nowOverlapping) {
                 setHighlighted(icon, false)
                 scheduler?.cancelTask(taskId)
-                Log.i(TAG, "Cancelled $taskId")
             }
 
             prevOverlaps[potatoImage] = nowOverlapping
@@ -168,20 +169,28 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
+        enableFullscreen()
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
         sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI)
 
         // Unblock thread
-        startScheduler()
+        if (isPlaying && scheduler == null) {
+            startScheduler()
+            setToExpireAt?.let {
+                startPotatoCountdown(it - System.currentTimeMillis())
+            }
+        }
     }
 
     override fun onPause() {
         super.onPause()
         sensorManager.unregisterListener(this)
 
-        // TODO save amount of time remaining and handle correctly onResume
-        scheduler?.kill()
-        scheduler = null
+        scheduler?.let {
+            setToExpireAt = it.getScheduledTime(POTATO_EXPIRE.name)
+            it.kill()
+            scheduler = null
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -232,12 +241,14 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
     }
 
-    var isPlaying = false
+    private var isPlaying = false
         set(value) {
             potatoImage.isVisible = value
             if (value) {
                 startScheduler()
-                onReceivePotato()
+                val potatoDuration = Random(System.currentTimeMillis())
+                    .nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
+                startPotatoCountdown(potatoDuration)
             } else {
                 scheduler?.kill()
                 playerMapping.forEach { setHighlighted(it.second, false) }
@@ -245,40 +256,46 @@ class InGameActivity : ThemedActivity(), SensorEventListener {
             field = value
         }
 
+    private val timeUntilExpiry: Long
+    get() {
+        val expiryTime = scheduler?.getScheduledTime(POTATO_EXPIRE.name)
+        return if (expiryTime == null) 0 else expiryTime - System.currentTimeMillis()
+    }
+
     private fun startScheduler() {
         scheduler?.kill()
         scheduler = GameScheduler()
-        scheduler?.schedule("PHYSICS_TICK", {
-            runOnUiThread {
-                Log.i("foo", "Running PHYSICS_TICK")
-                processPhysics()
-            }
+        scheduler?.schedule(PHYSICS_TICK.name, {
+            runOnUiThread(this::processPhysics)
         }, 10, true)
-        scheduler?.schedule("OVERLAPS_CHECK", {
-            runOnUiThread {
-                Log.i("foo", "Running OVERLAPS_CHECK")
-                checkOverlaps()
-            }
+        scheduler?.schedule(OVERLAPS_CHECK.name, {
+            runOnUiThread(this::checkOverlaps)
         }, 100, true)
     }
 
-    private fun onReceivePotato() {
-        // TODO
-//        val currentTime = System.currentTimeMillis()
-//        val potatoDuration = Random(currentTime).nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
-//        countdownToExplode = object : CountDownTimer(potatoDuration, 100) {
-//            override fun onTick(millisUntilFinished: Long) {
-//                Log.i(TAG, "countdownToExplode.onTick()")
-//                remainingTimeText.text = "${millisUntilFinished / 1000}s remaining"
-//            }
-//
-//            override fun onFinish() {
-//                remainingTimeText.text = "0s remaining"
-//                potatoExplosion.explode(potatoImage)
-//                Toast.makeText(this@InGameActivity, "The potato exploded.", Toast.LENGTH_SHORT).show()
-//                sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this@InGameActivity)
-//                isPlaying = false
-//            }
-//        }.start()
+    private fun startPotatoCountdown(timeUntilExpiry: Long) {
+        if (timeUntilExpiry < 0) {
+            updateTimeUntilPotatoExpiry()
+            explodePotato()
+            return
+        }
+
+        scheduler?.schedule(POTATO_EXPIRE.name, {
+            runOnUiThread(this::explodePotato)
+        }, timeUntilExpiry)
+        scheduler?.schedule(TIME_UNTIL_EXPIRY_UPDATE.name, {
+            runOnUiThread(this::updateTimeUntilPotatoExpiry)
+        }, 100, true)
+    }
+
+    private fun updateTimeUntilPotatoExpiry() {
+        remainingTimeText.text = "${timeUntilExpiry / 1000}s remaining"
+    }
+
+    private fun explodePotato() {
+        potatoExplosion.explode(potatoImage)
+        Toast.makeText(this, "The potato exploded.", Toast.LENGTH_SHORT).show()
+        sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this)
+        isPlaying = false
     }
 }
