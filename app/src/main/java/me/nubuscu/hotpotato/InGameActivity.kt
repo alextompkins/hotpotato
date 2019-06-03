@@ -67,7 +67,8 @@ class InGameActivity : ThemedActivity() {
         )
         playerIcons.forEach { it.isVisible = false }
         playerIcons.forEach { prevOverlaps[it] = false }
-        playerMapping = GameInfoHolder.instance.endpoints.zip(playerIcons)
+        val otherPlayers = GameInfoHolder.instance.endpoints.filter { it.id != GameInfoHolder.instance.myEndpointId }
+        playerMapping = otherPlayers.zip(playerIcons)
         playerMapping.forEach { (_, icon) -> icon.isVisible = true }
 
         isPlaying = GameInfoHolder.instance.isHost
@@ -126,10 +127,10 @@ class InGameActivity : ThemedActivity() {
         }
 
     private val timeUntilExpiry: Long
-    get() {
-        val expiryTime = scheduler?.getScheduledTime(POTATO_EXPIRE.name)
-        return if (expiryTime == null) 0 else expiryTime - System.currentTimeMillis()
-    }
+        get() {
+            val expiryTime = scheduler?.getScheduledTime(POTATO_EXPIRE.name)
+            return if (expiryTime == null) 0 else expiryTime - System.currentTimeMillis()
+        }
 
     private fun startScheduler() {
         scheduler?.kill()
