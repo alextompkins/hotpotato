@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
+import me.nubuscu.hotpotato.connection.handler.InGameUpdateHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
 import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
@@ -39,6 +40,13 @@ class InGameActivity : ThemedActivity() {
 
     private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
     private val prevOverlaps: MutableMap<ImageView, Boolean> = mutableMapOf()
+
+    private val handler = { message: InGameUpdateMessage ->
+        if (message.dest == GameInfoHolder.instance.myEndpointId) {
+            setToExpireAt = System.currentTimeMillis() + message.timeRemaining
+            isPlaying = true
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +80,7 @@ class InGameActivity : ThemedActivity() {
         playerMapping.forEach { (_, icon) -> icon.isVisible = true }
 
         isPlaying = GameInfoHolder.instance.isHost
+        InGameUpdateHandler.addExtraHandler(handler)
     }
 
     override fun onResume() {
@@ -111,12 +120,18 @@ class InGameActivity : ThemedActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        InGameUpdateHandler.removeExtraHandler(handler)
+    }
+
     private var isPlaying = false
         set(value) {
             potatoImage.isVisible = value
             if (value) {
                 startScheduler()
-                val potatoDuration = Random(System.currentTimeMillis())
+                val currentTime = System.currentTimeMillis()
+                val potatoDuration = setToExpireAt?.minus(currentTime) ?: Random(currentTime)
                     .nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
                 startPotatoCountdown(potatoDuration)
             } else {
@@ -196,7 +211,7 @@ class InGameActivity : ThemedActivity() {
 
     private fun passPotato(receiver: ClientDetailsModel) {
         Toast.makeText(this, "Sending to player ${receiver.id}", Toast.LENGTH_SHORT).show()
-        sendToAllNearbyEndpoints(InGameUpdateMessage(5000, receiver.id), this)
+        sendToAllNearbyEndpoints(InGameUpdateMessage(timeUntilExpiry, receiver.id), this)
         isPlaying = false
     }
 
