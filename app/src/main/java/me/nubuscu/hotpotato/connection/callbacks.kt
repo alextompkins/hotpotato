@@ -25,7 +25,7 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
 
     override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
         tentativeConnections.add(ClientDetailsModel(endpointId, connectionInfo.endpointName))
-        Nearby.getConnectionsClient(DataHolder.instance.context.get()!!).acceptConnection(endpointId, PayloadCallback)
+        Nearby.getConnectionsClient(DataHolder.instance.context.get()!!).acceptConnection(endpointId, MessageHandler)
     }
 
     override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
@@ -62,15 +62,15 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
 /**
  * Callback to handle receiving payloads
  */
-object PayloadCallback : PayloadCallback() {
+object MessageHandler : PayloadCallback() {
 
     override fun onPayloadReceived(endpointId: String, payload: Payload) {
         payload.asBytes()?.let { bytes ->
             when (val message = messageGson.fromJson(String(bytes), Message::class.java)) {
-                is LobbyUpdateMessage -> LobbyUpdateHandler().handle(message)
-                is GameStateUpdateMessage -> GameStateUpdateHandler().handle(message)
-                is InGameUpdateMessage -> InGameUpdateHandler().handle(message)
-                is YouAreMessage -> YouAreHandler().handle(message)
+                is LobbyUpdateMessage -> LobbyUpdateHandler.handle(message)
+                is GameStateUpdateMessage -> GameStateUpdateHandler.handle(message)
+                is InGameUpdateMessage -> InGameUpdateHandler.handle(message)
+                is YouAreMessage -> YouAreHandler.handle(message)
                 else -> Log.e("network", "unknown message type received: $message")
             }
         }

@@ -7,8 +7,10 @@ import me.nubuscu.hotpotato.model.dto.YouAreMessage
 import me.nubuscu.hotpotato.util.DataHolder
 import me.nubuscu.hotpotato.util.GameInfoHolder
 
-class YouAreHandler : PayloadHandler<YouAreMessage> {
+object YouAreHandler : PayloadHandler<YouAreMessage>() {
     override fun handle(message: YouAreMessage) {
+        super.handle(message)
+
         Log.d("iam", "I am ${message.endpoint}")
         GameInfoHolder.instance.apply {
             myEndpointId = message.endpoint
@@ -20,5 +22,4 @@ class YouAreHandler : PayloadHandler<YouAreMessage> {
             endpoints.add(ClientDetailsModel(myEndpointId!!, myName))
         }
     }
-
 }
