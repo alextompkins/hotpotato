@@ -79,10 +79,6 @@ class InGameActivity : ThemedActivity() {
         playerIcons.forEach { it.isVisible = false }
         playerIcons.forEach { prevOverlaps[it] = false }
 
-        GameInfoHolder.instance.endpoints.addAll(arrayOf(
-            ClientDetailsModel("endpoint_2", "player2"),
-            ClientDetailsModel("endpoint_3", "player3")
-        ))
         val otherPlayers = GameInfoHolder.instance.endpoints.filter { it.id != GameInfoHolder.instance.myEndpointId }
         playerMapping = otherPlayers.zip(playerIcons)
         playerMapping.forEach { (_, icon) -> icon.isVisible = true }
