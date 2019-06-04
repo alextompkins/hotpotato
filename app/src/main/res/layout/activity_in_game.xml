@@ -33,7 +33,7 @@
             android:id="@+id/p1Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@+id/p5Icon"
+            android:layout_marginTop="80dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_player_black_100dp" />
@@ -42,16 +42,16 @@
             android:id="@+id/p2Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginBottom="80dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/p6Icon"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:srcCompat="@drawable/ic_player_black_100dp" />
 
         <ImageView
             android:id="@+id/p3Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@+id/p6Icon"
+            android:layout_marginTop="80dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_player_black_100dp" />
@@ -60,29 +60,27 @@
             android:id="@+id/p4Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginBottom="80dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/p5Icon"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:srcCompat="@drawable/ic_player_black_100dp" />
 
         <ImageView
             android:id="@+id/p5Icon"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:layout_constraintBottom_toTopOf="@+id/p4Icon"
+            android:layout_height="100dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/p1Icon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:srcCompat="@drawable/ic_player_black_100dp" />
 
         <ImageView
             android:id="@+id/p6Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:layout_constraintBottom_toTopOf="@+id/p2Icon"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/p3Icon"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:srcCompat="@drawable/ic_player_black_100dp" />
 
         <ImageView
@@ -90,8 +88,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="@+id/container"
-            app:layout_constraintEnd_toEndOf="@+id/p2Icon"
-            app:layout_constraintStart_toStartOf="@+id/p4Icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:srcCompat="@drawable/ic_player_black_100dp" />
 
         <LinearLayout

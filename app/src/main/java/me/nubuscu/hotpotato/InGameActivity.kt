@@ -9,20 +9,19 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
+import me.nubuscu.hotpotato.connection.handler.InGameUpdateHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
 import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
 import me.nubuscu.hotpotato.scheduling.GameEvent.*
 import me.nubuscu.hotpotato.scheduling.GameScheduler
-import me.nubuscu.hotpotato.util.GameInfoHolder
-import me.nubuscu.hotpotato.util.PhysicsObject2D
-import me.nubuscu.hotpotato.util.TiltManager
-import me.nubuscu.hotpotato.util.sendToAllNearbyEndpoints
+import me.nubuscu.hotpotato.util.*
 import tyrantgit.explosionfield.ExplosionField
 import kotlin.random.Random
 
 
-const val MIN_POTATO_DURATION = 5 * 1000L
+const val VIBRATE_DURATION = 75L
+const val MIN_POTATO_DURATION = 10 * 1000L
 const val MAX_POTATO_DURATION = 30 * 1000L
 
 
@@ -36,9 +35,17 @@ class InGameActivity : ThemedActivity() {
     private lateinit var potatoObject: PhysicsObject2D
     private lateinit var potatoExplosion: ExplosionField
     private lateinit var tiltManager: TiltManager
+    private lateinit var vibrateManager: VibrateManager
 
     private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
     private val prevOverlaps: MutableMap<ImageView, Boolean> = mutableMapOf()
+
+    private val handler = { message: InGameUpdateMessage ->
+        if (message.dest == GameInfoHolder.instance.myEndpointId) {
+            setToExpireAt = System.currentTimeMillis() + message.timeRemaining
+            isPlaying = true
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +53,7 @@ class InGameActivity : ThemedActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         tiltManager = TiltManager(this)
+        vibrateManager = VibrateManager(this)
 
         remainingTimeText = findViewById(R.id.remainingTimeText)
         container = findViewById(R.id.container)
@@ -53,7 +61,9 @@ class InGameActivity : ThemedActivity() {
         potatoImage.setImageResource(
             if (currentTheme == "night_mode") R.drawable.ic_bomb_100dp else R.drawable.ic_potato_100dp
         )
-        potatoObject = PhysicsObject2D()
+        potatoObject = PhysicsObject2D(onCollideWithBounds = {
+            vibrateManager.vibrate(VIBRATE_DURATION)
+        })
         potatoExplosion = ExplosionField.attach2Window(this)
 
         val playerIcons: Array<ImageView> = arrayOf(
@@ -67,11 +77,17 @@ class InGameActivity : ThemedActivity() {
         )
         playerIcons.forEach { it.isVisible = false }
         playerIcons.forEach { prevOverlaps[it] = false }
+
+        GameInfoHolder.instance.endpoints.addAll(arrayOf(
+            ClientDetailsModel("endpoint_2", "player2"),
+            ClientDetailsModel("endpoint_3", "player3")
+        ))
         val otherPlayers = GameInfoHolder.instance.endpoints.filter { it.id != GameInfoHolder.instance.myEndpointId }
         playerMapping = otherPlayers.zip(playerIcons)
         playerMapping.forEach { (_, icon) -> icon.isVisible = true }
 
         isPlaying = GameInfoHolder.instance.isHost
+        InGameUpdateHandler.addExtraHandler(handler)
     }
 
     override fun onResume() {
@@ -111,12 +127,18 @@ class InGameActivity : ThemedActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        InGameUpdateHandler.removeExtraHandler(handler)
+    }
+
     private var isPlaying = false
         set(value) {
             potatoImage.isVisible = value
             if (value) {
                 startScheduler()
-                val potatoDuration = Random(System.currentTimeMillis())
+                val currentTime = System.currentTimeMillis()
+                val potatoDuration = setToExpireAt?.minus(currentTime) ?: Random(currentTime)
                     .nextLong(MIN_POTATO_DURATION, MAX_POTATO_DURATION)
                 startPotatoCountdown(potatoDuration)
             } else {
@@ -135,12 +157,8 @@ class InGameActivity : ThemedActivity() {
     private fun startScheduler() {
         scheduler?.kill()
         scheduler = GameScheduler()
-        scheduler?.schedule(PHYSICS_TICK.name, {
-            runOnUiThread(this::processPhysics)
-        }, 10, true)
-        scheduler?.schedule(OVERLAPS_CHECK.name, {
-            runOnUiThread(this::checkOverlaps)
-        }, 100, true)
+        scheduler?.schedule(PHYSICS_TICK.name, this::processPhysics, 10, true)
+        scheduler?.schedule(OVERLAPS_CHECK.name, this::checkOverlaps, 50, true)
     }
 
     // MOVING POTATO
@@ -151,7 +169,7 @@ class InGameActivity : ThemedActivity() {
             (container.width - potatoImage.drawable.intrinsicWidth).toFloat(),
             (container.height - potatoImage.drawable.intrinsicHeight).toFloat()
         )
-        updatePotatoPos(potatoObject.pos.x, potatoObject.pos.y)
+        runOnUiThread { updatePotatoPos(potatoObject.pos.x, potatoObject.pos.y) }
     }
 
     private fun updatePotatoPos(x: Float, y: Float) {
@@ -168,17 +186,17 @@ class InGameActivity : ThemedActivity() {
         playerMapping.forEach { (details, icon) ->
             val taskId = "${GIVE_POTATO.name}-${details.id}"
             val nowOverlapping = isOverlapping(icon, potatoImage)
-            val prevOverlapping = prevOverlaps[potatoImage] ?: false
+            val prevOverlapping = prevOverlaps[icon] ?: false
 
             if (!prevOverlapping && nowOverlapping) {
-                setHighlighted(icon, true)
-                scheduler?.schedule(taskId, { runOnUiThread { passPotato(details) } }, 2000)
+                runOnUiThread { setHighlighted(icon, true) }
+                scheduler?.schedule(taskId, { runOnUiThread { passPotato(details) } }, 3000)
             } else if (prevOverlapping && !nowOverlapping) {
-                setHighlighted(icon, false)
+                runOnUiThread { setHighlighted(icon, false) }
                 scheduler?.cancelTask(taskId)
             }
 
-            prevOverlaps[potatoImage] = nowOverlapping
+            prevOverlaps[icon] = nowOverlapping
         }
     }
 
@@ -195,8 +213,12 @@ class InGameActivity : ThemedActivity() {
     }
 
     private fun passPotato(receiver: ClientDetailsModel) {
+        for (i in 1..7) {
+            scheduler?.cancelTask("${GIVE_POTATO.name}-$i")
+        }
+
         Toast.makeText(this, "Sending to player ${receiver.id}", Toast.LENGTH_SHORT).show()
-        sendToAllNearbyEndpoints(InGameUpdateMessage(5000, receiver.id), this)
+        sendToAllNearbyEndpoints(InGameUpdateMessage(timeUntilExpiry, receiver.id), this)
         isPlaying = false
     }
 

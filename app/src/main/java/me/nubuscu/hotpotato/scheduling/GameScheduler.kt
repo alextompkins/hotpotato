@@ -6,8 +6,11 @@ import java.util.TimerTask
 class GameScheduler {
     private val timer: Timer = Timer("gameScheduler", true)
     private val tasks: MutableMap<String, GameTask> = mutableMapOf()
+    private var killed = false
 
     fun schedule(taskId: String, task: () -> Unit, delay: Long, isRepeating: Boolean = false) {
+        if (killed) return
+
         val postExecute: () -> Unit = if (isRepeating) ({}) else ({ tasks.remove(taskId) })
         val gameTask = GameTask(task, postExecute, delay, isRepeating)
 
@@ -26,7 +29,10 @@ class GameScheduler {
         tasks.remove(taskId)
     }
 
-    fun kill() = timer.cancel()
+    fun kill() {
+        killed = true
+        timer.cancel()
+    }
 }
 
 class GameTask(
