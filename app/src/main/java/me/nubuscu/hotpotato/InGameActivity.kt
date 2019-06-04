@@ -43,7 +43,14 @@ class InGameActivity : ThemedActivity() {
 
     private val handler = { message: InGameUpdateMessage ->
         if (message.dest == GameInfoHolder.instance.myEndpointId) {
-            setToExpireAt = System.currentTimeMillis() + message.timeRemaining
+            val currentTime = System.currentTimeMillis()
+            // Since it's not very fair if someone receives a potato with only 2 seconds left on it, give them some extra time
+            val timeLeft = if (message.timeRemaining < 2000) {
+                message.timeRemaining + Random(currentTime).nextLong(3000, 6000)
+            } else {
+                message.timeRemaining
+            }
+            setToExpireAt = currentTime + timeLeft
             isPlaying = true
         }
     }
