@@ -172,12 +172,7 @@ class InGameActivity : ThemedActivity() {
 
             if (!prevOverlapping && nowOverlapping) {
                 setHighlighted(icon, true)
-                scheduler?.schedule(taskId, {
-                    runOnUiThread {
-                        Toast.makeText(this, "Sending to player ${details.id}", Toast.LENGTH_SHORT).show()
-                        sendToAllNearbyEndpoints(InGameUpdateMessage(5000, details.id), this)
-                    }
-                }, 2000)
+                scheduler?.schedule(taskId, { runOnUiThread { passPotato(details) } }, 2000)
             } else if (prevOverlapping && !nowOverlapping) {
                 setHighlighted(icon, false)
                 scheduler?.cancelTask(taskId)
@@ -197,6 +192,12 @@ class InGameActivity : ThemedActivity() {
     private fun setHighlighted(icon: ImageView, highlighted: Boolean) {
         val alpha = if (highlighted) 100 else 0
         icon.setColorFilter(Color.argb(alpha, 255, 255, 255))
+    }
+
+    private fun passPotato(receiver: ClientDetailsModel) {
+        Toast.makeText(this, "Sending to player ${receiver.id}", Toast.LENGTH_SHORT).show()
+        sendToAllNearbyEndpoints(InGameUpdateMessage(5000, receiver.id), this)
+        isPlaying = false
     }
 
     // POTATO COUNTDOWN
