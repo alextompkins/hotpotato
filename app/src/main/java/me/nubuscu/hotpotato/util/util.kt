@@ -20,6 +20,7 @@ fun sendToNearbyEndpoint(content: Message, endpoint: String, context: Context?) 
     sendToNearbyEndpoints(content, listOf(endpoint), context)
 
 fun sendToAllNearbyEndpoints(content: Message, context: Context?) {
-    val endpoints = GameInfoHolder.instance.endpoints.map { it.id }
+    val info = GameInfoHolder.instance
+    val endpoints = info.endpoints.filter { it.id != info.myEndpointId }.map { it.id }
     sendToNearbyEndpoints(content, endpoints, context)
 }

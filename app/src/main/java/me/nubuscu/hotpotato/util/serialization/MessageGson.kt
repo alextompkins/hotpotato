@@ -13,7 +13,7 @@ val messageGson: Gson
         return GsonBuilder()
             .registerTypeAdapterFactory(
                 RuntimeTypeAdapterFactory
-                    .of(Message::class.java, "type")
+                    .of(Message::class.java, "type", true)
                     .registerSubtype(LobbyUpdateMessage::class.java, "lobbyUpdate")
                     .registerSubtype(GameStateUpdateMessage::class.java, "gameState")
                     .registerSubtype(InGameUpdateMessage::class.java, "inGame")
