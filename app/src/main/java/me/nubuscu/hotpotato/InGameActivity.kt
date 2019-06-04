@@ -36,6 +36,7 @@ class InGameActivity : ThemedActivity() {
     private lateinit var potatoExplosion: ExplosionField
     private lateinit var tiltManager: TiltManager
     private lateinit var vibrateManager: VibrateManager
+    private lateinit var beepHelper: BeepHelper
 
     private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
     private val prevOverlaps: MutableMap<ImageView, Boolean> = mutableMapOf()
@@ -94,6 +95,7 @@ class InGameActivity : ThemedActivity() {
         super.onResume()
         enableFullscreen()
         tiltManager.registerListeners()
+        beepHelper = BeepHelper()
 
         // If the user had the potato, restart game scheduler
         if (isPlaying && scheduler == null) {
@@ -118,6 +120,7 @@ class InGameActivity : ThemedActivity() {
     override fun onPause() {
         super.onPause()
         tiltManager.unregisterListeners()
+        beepHelper.release()
 
         // If the game scheduler is running, save the time of potato expiry and kill it
         scheduler?.let {
@@ -236,14 +239,32 @@ class InGameActivity : ThemedActivity() {
         scheduler?.schedule(TIME_UNTIL_EXPIRY_UPDATE.name, {
             runOnUiThread(this::updateTimeUntilPotatoExpiry)
         }, 100, true)
+        scheduleNextBeep()
     }
 
     private fun updateTimeUntilPotatoExpiry() {
         remainingTimeText.text = "${timeUntilExpiry / 1000}s remaining"
     }
 
+    private fun scheduleNextBeep() {
+        val timeToNextBeep = when (timeUntilExpiry / 1000) {
+            in 0..3 -> 200
+            in 3..5 -> 500
+            in 5..10 -> 1000
+            in 10..20 -> 1500
+            else -> 2000
+        }
+        if (timeToNextBeep > timeUntilExpiry) return
+
+        scheduler?.schedule(BEEP.name, {
+            beepHelper.beep(50)
+            scheduleNextBeep()
+        }, timeToNextBeep.toLong())
+    }
+
     private fun explodePotato() {
         potatoExplosion.explode(potatoImage)
+        vibrateManager.vibrate(500)
         Toast.makeText(this, "The potato exploded.", Toast.LENGTH_SHORT).show()
         sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this)
         isPlaying = false
