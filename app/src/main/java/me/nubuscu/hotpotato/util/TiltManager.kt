@@ -1,6 +1,5 @@
 package me.nubuscu.hotpotato.util
 
-import android.app.Activity
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -8,8 +7,8 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
 
-class TiltManager(activity: Activity) : SensorEventListener {
-    private val sensorManager = activity.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+class TiltManager(context: Context) : SensorEventListener {
+    private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private val magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
     private var acceleration: FloatArray = FloatArray(9) { 0f }
