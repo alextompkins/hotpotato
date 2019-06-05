@@ -80,7 +80,13 @@ class InGameActivity : ThemedActivity() {
 
         val otherPlayers = GameInfoHolder.instance.endpoints.filter { it.id != GameInfoHolder.instance.myEndpointId }
         playerMapping = otherPlayers.zip(playerIcons)
-        playerMapping.forEach { (_, icon) -> icon.isVisible = true }
+        playerMapping.forEach { (player, icon) ->
+            player.profilePicture?.let {
+                val drawable = makeRoundDrawableFromBitmap(resources, makeBitmap(it))
+                icon.setImageDrawable(drawable)
+            }
+            icon.isVisible = true
+        }
 
         roundStarted = System.currentTimeMillis()
         isPlaying = GameInfoHolder.instance.isHost
