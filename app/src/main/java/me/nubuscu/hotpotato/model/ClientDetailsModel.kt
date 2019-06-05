@@ -6,5 +6,25 @@ package me.nubuscu.hotpotato.model
 data class ClientDetailsModel (
     val id: String,
     val name: String,
-    val profilePicture: ByteArray? = null
-)
+    var profilePicture: ByteArray? = null
+) {
+    override fun toString(): String {
+        val profilePicDesc = if (profilePicture == null) "null" else "${profilePicture?.size} bytes"
+        return "ClientDetailsModel(id='$id', name='$name', profilePicture=$profilePicDesc)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ClientDetailsModel
+
+        if (id != other.id) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+}

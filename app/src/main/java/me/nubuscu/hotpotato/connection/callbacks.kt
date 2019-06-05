@@ -60,10 +60,32 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
  * Callback to handle receiving payloads
  */
 object MessageHandler : PayloadCallback() {
+    private val incomingPayloads: MutableMap<Long, Payload> = mutableMapOf()
 
     override fun onPayloadReceived(endpointId: String, payload: Payload) {
+        incomingPayloads[payload.id] = payload
+    }
+
+    override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
+        when (update.status) {
+            PayloadTransferUpdate.Status.IN_PROGRESS -> {
+                Log.i("RECEIVING_PAYLOAD", "Payload transferring... ${update.bytesTransferred}/${update.totalBytes} bytes")
+            }
+            PayloadTransferUpdate.Status.SUCCESS -> {
+                val payload = incomingPayloads[update.payloadId]
+                payload?.let { handleCompletePayload(endpointId, payload) }
+            }
+            PayloadTransferUpdate.Status.FAILURE -> {
+                Log.e("RECEIVING_PAYLOAD", "Payload transfer from $endpointId failed")
+            }
+        }
+    }
+
+    private fun handleCompletePayload(endpointId: String, payload: Payload) {
         payload.asBytes()?.let { bytes ->
+            Log.i("RECEIVED_PAYLOAD", String(bytes))
             when (val message = messageGson.fromJson(String(bytes), Message::class.java)) {
+                is AvatarUpdateMessage -> AvatarUpdateHandler.handle(message)
                 is LobbyUpdateMessage -> LobbyUpdateHandler.handle(message)
                 is GameBeginMessage -> GameBeginHandler.handle(message)
                 is GameEndMessage -> GameEndHandler.handle(message)
@@ -72,10 +94,5 @@ object MessageHandler : PayloadCallback() {
                 else -> Log.e("network", "unknown message type received: $message")
             }
         }
-    }
-
-    override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
-        //bytes payloads are sent in one chunk, no need to wait for this
-        //do nothing
     }
 }
