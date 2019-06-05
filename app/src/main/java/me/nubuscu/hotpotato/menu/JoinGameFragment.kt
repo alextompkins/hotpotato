@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -36,6 +37,7 @@ class JoinGameFragment : Fragment() {
         }
     private lateinit var vmAvailableConnections: AvailableConnectionsViewModel
     private lateinit var joinableGamesList: RecyclerView
+    private lateinit var joiningProgressBar: ProgressBar
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,6 +48,7 @@ class JoinGameFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        joiningProgressBar = view.findViewById(R.id.joiningProgressBar)
         vmAvailableConnections = ViewModelProviders.of(requireActivity()).get(AvailableConnectionsViewModel::class.java)
         joinableGamesList = view.findViewById(R.id.joinableGamesList)
         joinableGamesList.layoutManager = LinearLayoutManager(context)
@@ -113,11 +116,16 @@ class JoinGameFragment : Fragment() {
 
     private fun connectTo(game: JoinableGameModel) {
         Log.d("FOO", "connectTo triggered")
+        joiningProgressBar.visibility = View.VISIBLE
         Nearby.getConnectionsClient(requireContext())
             .requestConnection(username, game.endpointId, ConnectionLifecycleCallback(vmAvailableConnections))
             .addOnSuccessListener {
                 Log.i("network", "successfully requested connection to ${game.endpointId}")
                 stopDiscovering()
-            }.addOnFailureListener { e -> Log.e("network", "failed to connect to ${game.endpointId}", e) }
+                joiningProgressBar.visibility = View.GONE
+            }.addOnFailureListener { e ->
+                Log.e("network", "failed to connect to ${game.endpointId}", e)
+                joiningProgressBar.visibility = View.GONE
+            }
     }
 }
