@@ -21,9 +21,13 @@ import me.nubuscu.hotpotato.InGameActivity
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
+import me.nubuscu.hotpotato.connection.handler.AvatarUpdateHandler
+import me.nubuscu.hotpotato.connection.handler.YouAreHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
+import me.nubuscu.hotpotato.model.dto.AvatarUpdateMessage
 import me.nubuscu.hotpotato.model.dto.GameBeginMessage
 import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
+import me.nubuscu.hotpotato.model.dto.YouAreMessage
 import me.nubuscu.hotpotato.serviceId
 import me.nubuscu.hotpotato.util.GameInfoHolder
 import me.nubuscu.hotpotato.util.sendToNearbyEndpoints
@@ -80,11 +84,15 @@ class HostGameFragment : Fragment() {
         clearConnections()
         startAdvertising()
         GameInfoHolder.instance.isHost = true
+        AvatarUpdateHandler.addExtraHandler(avatarUpdateHandler)
+        YouAreHandler.addExtraHandler(youAreHandler)
     }
 
     override fun onPause() {
         super.onPause()
         stopAdvertising()
+        AvatarUpdateHandler.removeExtraHandler(avatarUpdateHandler)
+        YouAreHandler.removeExtraHandler(youAreHandler)
     }
 
     private fun startAdvertising() {
@@ -116,11 +124,30 @@ class HostGameFragment : Fragment() {
     /**
      * Sends a message to all clients, informing them of all the members of the current lobby
      */
-    private fun notifyClientsOfClients(members: MutableList<ClientDetailsModel>) {
-        val content = LobbyUpdateMessage(members)
-        sendToNearbyEndpoints(content, members.map { it.id }, requireContext())
+    private fun notifyClientsOfClients(otherEndpoints: List<ClientDetailsModel>) {
+        val info = GameInfoHolder.instance
+        val hostDetails = info.endpoints.find { it.id == info.myEndpointId }
+
+        val allEndpoints: MutableSet<ClientDetailsModel> = mutableSetOf()
+        allEndpoints.addAll(otherEndpoints)
+        if (hostDetails != null) allEndpoints.add(hostDetails)
+        sendToNearbyEndpoints(LobbyUpdateMessage(allEndpoints.toList()), otherEndpoints.map { it.id }, requireContext())
+    }
+
+    private val avatarUpdateHandler = { message: AvatarUpdateMessage ->
+        val client = GameInfoHolder.instance.endpoints.find { it.id == message.endpointId }
+        if (client != null) {
+            client.profilePicture = message.profilePicture
+            updateConnectedEndpoints()
+        }
+    }
+
+    private val youAreHandler = { _: YouAreMessage ->
+        updateConnectedEndpoints()
+    }
+
+    private fun updateConnectedEndpoints() {
+        val otherEndpoints = GameInfoHolder.instance.endpoints.filter { it.id != GameInfoHolder.instance.myEndpointId }
+        vmAvailableConnections.connected.postValue(otherEndpoints.toMutableList())
     }
 }
-
-
-
