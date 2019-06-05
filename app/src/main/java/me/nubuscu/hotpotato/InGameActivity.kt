@@ -1,5 +1,6 @@
 package me.nubuscu.hotpotato
 
+import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -136,6 +137,20 @@ class InGameActivity : ThemedActivity() {
     override fun onStop() {
         super.onStop()
         InGameUpdateHandler.removeExtraHandler(handler)
+    }
+
+    override fun onBackPressed() {
+        AlertDialog.Builder(this)
+            .setMessage("Are you sure you want to leave the game? This will remove you from the current lobby.")
+            .setPositiveButton("Yes") { _, _ ->
+                // TODO Go back to lobby screen and leave current lobby
+                finish()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.cancel()
+            }
+            .create()
+            .show()
     }
 
     private var isPlaying = false
