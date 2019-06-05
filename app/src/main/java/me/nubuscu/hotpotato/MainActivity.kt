@@ -5,11 +5,9 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.tabs.TabLayout
 import me.nubuscu.hotpotato.util.DataHolder
-import me.nubuscu.hotpotato.util.GameInfoHolder
 import java.lang.ref.WeakReference
 
 const val serviceId = "me.nubuscu.hotpotato"
@@ -39,13 +37,6 @@ class MainActivity : ThemedActivity() {
         viewPager.adapter = adapter
         tabLayout.setupWithViewPager(viewPager)
 
-        // TODO remove debug button
-        val debugInGameButton: Button = findViewById(R.id.debugInGameButton)
-        debugInGameButton.setOnClickListener {
-            GameInfoHolder.instance.isHost = true
-            val intent = Intent(this, InGameActivity::class.java)
-            startActivity(intent)
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
