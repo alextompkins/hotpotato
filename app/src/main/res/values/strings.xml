@@ -17,4 +17,9 @@
     <!-- Theme Preferences -->
     <string name="day_mode">Day Mode</string>
     <string name="night_mode">Night Mode</string>
+
+    <!-- Game Over Screen -->
+    <string name="game_over">GAME OVER</string>
+    <string name="had_the_potato_when_it_exploded">had the potato when it exploded!</string>
+    <string name="return_to_lobby">Return to Lobby</string>
 </resources>

@@ -1,8 +1,11 @@
 package me.nubuscu.hotpotato
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
@@ -294,5 +297,11 @@ class InGameActivity : ThemedActivity() {
         Toast.makeText(this, "The potato exploded.", Toast.LENGTH_SHORT).show()
         sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this)
         isPlaying = false
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            finish()
+            val intent = Intent(this, GameOverActivity::class.java)
+            startActivity(intent)
+        }, 2000L)
     }
 }
