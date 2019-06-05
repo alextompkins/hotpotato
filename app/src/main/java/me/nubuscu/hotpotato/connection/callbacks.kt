@@ -5,10 +5,7 @@ import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
 import com.google.android.gms.nearby.connection.PayloadCallback
-import me.nubuscu.hotpotato.connection.handler.GameStateUpdateHandler
-import me.nubuscu.hotpotato.connection.handler.InGameUpdateHandler
-import me.nubuscu.hotpotato.connection.handler.LobbyUpdateHandler
-import me.nubuscu.hotpotato.connection.handler.YouAreHandler
+import me.nubuscu.hotpotato.connection.handler.*
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.*
 import me.nubuscu.hotpotato.util.DataHolder
@@ -68,7 +65,8 @@ object MessageHandler : PayloadCallback() {
         payload.asBytes()?.let { bytes ->
             when (val message = messageGson.fromJson(String(bytes), Message::class.java)) {
                 is LobbyUpdateMessage -> LobbyUpdateHandler.handle(message)
-                is GameStateUpdateMessage -> GameStateUpdateHandler.handle(message)
+                is GameBeginMessage -> GameBeginHandler.handle(message)
+                is GameEndMessage -> GameEndHandler.handle(message)
                 is InGameUpdateMessage -> InGameUpdateHandler.handle(message)
                 is YouAreMessage -> YouAreHandler.handle(message)
                 else -> Log.e("network", "unknown message type received: $message")

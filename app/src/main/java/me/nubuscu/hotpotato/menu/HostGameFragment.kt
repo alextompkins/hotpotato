@@ -22,7 +22,7 @@ import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
 import me.nubuscu.hotpotato.model.ClientDetailsModel
-import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
+import me.nubuscu.hotpotato.model.dto.GameBeginMessage
 import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.serviceId
 import me.nubuscu.hotpotato.util.GameInfoHolder
@@ -64,7 +64,7 @@ class HostGameFragment : Fragment() {
         val startGameButton: Button = view.findViewById(R.id.startGameButton)
         startGameButton.setOnClickListener {
             sendToNearbyEndpoints(
-                GameStateUpdateMessage(true),
+                GameBeginMessage(),
                 vmAvailableConnections.connected.value?.map { it.id } ?: listOf(),
                 requireContext())
             GameInfoHolder.instance.endpoints.addAll(

@@ -15,7 +15,8 @@ val messageGson: Gson
                 RuntimeTypeAdapterFactory
                     .of(Message::class.java, "type", true)
                     .registerSubtype(LobbyUpdateMessage::class.java, "lobbyUpdate")
-                    .registerSubtype(GameStateUpdateMessage::class.java, "gameState")
+                    .registerSubtype(GameBeginMessage::class.java, "gameBegin")
+                    .registerSubtype(GameEndMessage::class.java, "gameEnd")
                     .registerSubtype(InGameUpdateMessage::class.java, "inGame")
                     .registerSubtype(YouAreMessage::class.java, "youAre")
             )

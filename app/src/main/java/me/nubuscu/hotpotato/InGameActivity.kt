@@ -15,7 +15,7 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import me.nubuscu.hotpotato.connection.handler.InGameUpdateHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
-import me.nubuscu.hotpotato.model.dto.GameStateUpdateMessage
+import me.nubuscu.hotpotato.model.dto.GameEndMessage
 import me.nubuscu.hotpotato.model.dto.InGameUpdateMessage
 import me.nubuscu.hotpotato.scheduling.GameEvent.*
 import me.nubuscu.hotpotato.scheduling.GameScheduler
@@ -295,7 +295,7 @@ class InGameActivity : ThemedActivity() {
         potatoExplosion.explode(potatoImage)
         vibrateManager.vibrate(500)
         Toast.makeText(this, "The potato exploded.", Toast.LENGTH_SHORT).show()
-        sendToAllNearbyEndpoints(GameStateUpdateMessage(false), this)
+        sendToAllNearbyEndpoints(GameEndMessage(GameInfoHolder.instance.myEndpointId!!), this)
         isPlaying = false
 
         Handler(Looper.getMainLooper()).postDelayed({
