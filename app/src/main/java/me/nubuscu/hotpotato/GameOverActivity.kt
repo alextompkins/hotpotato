@@ -2,8 +2,12 @@ package me.nubuscu.hotpotato
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
+import me.nubuscu.hotpotato.model.ClientDetailsModel
+import me.nubuscu.hotpotato.util.GameInfoHolder
 
 class GameOverActivity : ThemedActivity() {
+    private lateinit var loser: ClientDetailsModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -13,6 +17,13 @@ class GameOverActivity : ThemedActivity() {
         backToLobbyButton.setOnClickListener {
             finish()
         }
+
+        val gameInfo = GameInfoHolder.instance
+        val loserEndpointId = intent.getStringExtra("loserEndpointId")
+        loser = gameInfo.endpoints.find { it.id == loserEndpointId }!!
+
+        val loserUsername: TextView = findViewById(R.id.loserUsername)
+        loserUsername.text = if (loser.id == gameInfo.myEndpointId) "You" else loser.name
     }
 
 }
