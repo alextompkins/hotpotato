@@ -13,6 +13,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
+import me.nubuscu.hotpotato.connection.handler.GameEndHandler
 import me.nubuscu.hotpotato.connection.handler.InGameUpdateHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.GameEndMessage
@@ -44,20 +45,6 @@ class InGameActivity : ThemedActivity() {
 
     private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
     private val prevOverlaps: MutableMap<ImageView, Boolean> = mutableMapOf()
-
-    private val handler = { message: InGameUpdateMessage ->
-        if (message.dest == GameInfoHolder.instance.myEndpointId) {
-            val currentTime = System.currentTimeMillis()
-            // Since it's not very fair if someone receives a potato with only 2 seconds left on it, give them some extra time
-            val timeLeft = if (message.timeRemaining < 2000) {
-                message.timeRemaining + Random(currentTime).nextLong(3000, 6000)
-            } else {
-                message.timeRemaining
-            }
-            setToExpireAt = currentTime + timeLeft
-            isPlaying = true
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,7 +82,12 @@ class InGameActivity : ThemedActivity() {
         playerMapping.forEach { (_, icon) -> icon.isVisible = true }
 
         isPlaying = GameInfoHolder.instance.isHost
-        InGameUpdateHandler.addExtraHandler(handler)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        InGameUpdateHandler.addExtraHandler(inGameUpdateHandler)
+        GameEndHandler.addExtraHandler(gameEndHandler)
     }
 
     override fun onResume() {
@@ -139,7 +131,8 @@ class InGameActivity : ThemedActivity() {
 
     override fun onStop() {
         super.onStop()
-        InGameUpdateHandler.removeExtraHandler(handler)
+        InGameUpdateHandler.removeExtraHandler(inGameUpdateHandler)
+        GameEndHandler.removeExtraHandler(gameEndHandler)
     }
 
     override fun onBackPressed() {
@@ -299,9 +292,33 @@ class InGameActivity : ThemedActivity() {
         isPlaying = false
 
         Handler(Looper.getMainLooper()).postDelayed({
-            finish()
-            val intent = Intent(this, GameOverActivity::class.java)
-            startActivity(intent)
+            goToGameOverScreen(GameInfoHolder.instance.myEndpointId!!)
         }, 2000L)
+    }
+
+    private fun goToGameOverScreen(loserEndpointId: String) {
+        finish()
+        val intent = Intent(this, GameOverActivity::class.java)
+        intent.putExtra("loserEndpointId", loserEndpointId)
+        startActivity(intent)
+    }
+
+    // MESSAGE HANDLING
+    private val inGameUpdateHandler = { message: InGameUpdateMessage ->
+        if (message.dest == GameInfoHolder.instance.myEndpointId) {
+            val currentTime = System.currentTimeMillis()
+            // Since it's not very fair if someone receives a potato with only 2 seconds left on it, give them some extra time
+            val timeLeft = if (message.timeRemaining < 2000) {
+                message.timeRemaining + Random(currentTime).nextLong(3000, 6000)
+            } else {
+                message.timeRemaining
+            }
+            setToExpireAt = currentTime + timeLeft
+            isPlaying = true
+        }
+    }
+
+    private val gameEndHandler = { message : GameEndMessage ->
+        goToGameOverScreen(message.loserEndpointId)
     }
 }
