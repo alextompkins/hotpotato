@@ -45,6 +45,7 @@ class InGameActivity : ThemedActivity() {
 
     private lateinit var playerMapping: List<Pair<ClientDetailsModel, ImageView>>
     private val prevOverlaps: MutableMap<ImageView, Boolean> = mutableMapOf()
+    private var roundStarted = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +82,7 @@ class InGameActivity : ThemedActivity() {
         playerMapping = otherPlayers.zip(playerIcons)
         playerMapping.forEach { (_, icon) -> icon.isVisible = true }
 
+        roundStarted = System.currentTimeMillis()
         isPlaying = GameInfoHolder.instance.isHost
     }
 
@@ -287,19 +289,21 @@ class InGameActivity : ThemedActivity() {
     private fun explodePotato() {
         potatoExplosion.explode(potatoImage)
         vibrateManager.vibrate(500)
-        Toast.makeText(this, "The potato exploded.", Toast.LENGTH_SHORT).show()
-        sendToAllNearbyEndpoints(GameEndMessage(GameInfoHolder.instance.myEndpointId!!), this)
+
+        val roundDuration = System.currentTimeMillis() - roundStarted
+        sendToAllNearbyEndpoints(GameEndMessage(GameInfoHolder.instance.myEndpointId!!, roundDuration), this)
         isPlaying = false
 
         Handler(Looper.getMainLooper()).postDelayed({
-            goToGameOverScreen(GameInfoHolder.instance.myEndpointId!!)
+            goToGameOverScreen(GameInfoHolder.instance.myEndpointId!!, roundDuration)
         }, 2000L)
     }
 
-    private fun goToGameOverScreen(loserEndpointId: String) {
+    private fun goToGameOverScreen(loserEndpointId: String, roundDuration: Long) {
         finish()
         val intent = Intent(this, GameOverActivity::class.java)
         intent.putExtra("loserEndpointId", loserEndpointId)
+        intent.putExtra("roundDuration", roundDuration)
         startActivity(intent)
     }
 
@@ -319,6 +323,6 @@ class InGameActivity : ThemedActivity() {
     }
 
     private val gameEndHandler = { message : GameEndMessage ->
-        goToGameOverScreen(message.loserEndpointId)
+        goToGameOverScreen(message.loserEndpointId, message.roundDuration)
     }
 }

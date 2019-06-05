@@ -24,6 +24,10 @@ class GameOverActivity : ThemedActivity() {
 
         val loserUsername: TextView = findViewById(R.id.loserUsername)
         loserUsername.text = if (loser.id == gameInfo.myEndpointId) "You" else loser.name
+
+        val roundDuration = intent.getLongExtra("roundDuration", 0)
+        val roundLasted: TextView = findViewById(R.id.roundLasted)
+        roundLasted.text = resources.getString(R.string.that_round_lasted).format(roundDuration / 1000)
     }
 
 }
