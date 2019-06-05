@@ -155,6 +155,13 @@ class InGameActivity : ThemedActivity() {
         set(value) {
             potatoImage.isVisible = value
             if (value) {
+                val centerX = container.width / 2f
+                val centerY = container.height / 2f
+                potatoObject.pos.apply {
+                    x = centerX - potatoImage.drawable.intrinsicWidth / 2
+                    y = centerY - potatoImage.drawable.intrinsicHeight / 2
+                }
+//                updatePotatoPos(container.width / 2f, container.height / 2f)
                 startScheduler()
                 val currentTime = System.currentTimeMillis()
                 val potatoDuration = setToExpireAt?.minus(currentTime) ?: Random(currentTime)
@@ -263,11 +270,14 @@ class InGameActivity : ThemedActivity() {
 
         var colourFactor = 1 - (timeUntilExpiry.toFloat() / MIN_POTATO_DURATION)
         colourFactor = if (colourFactor < 0) 0f else colourFactor
-        potatoImage.setColorFilter(Color.argb(
-            (colourFactor * 150).toInt(),
-            (colourFactor * 255).toInt(),
-            (colourFactor * 16).toInt(),
-            0))
+        potatoImage.setColorFilter(
+            Color.argb(
+                (colourFactor * 150).toInt(),
+                (colourFactor * 255).toInt(),
+                (colourFactor * 16).toInt(),
+                0
+            )
+        )
     }
 
     private fun scheduleNextBeep() {
@@ -322,7 +332,7 @@ class InGameActivity : ThemedActivity() {
         }
     }
 
-    private val gameEndHandler = { message : GameEndMessage ->
+    private val gameEndHandler = { message: GameEndMessage ->
         goToGameOverScreen(message.loserEndpointId, message.roundDuration)
     }
 }
