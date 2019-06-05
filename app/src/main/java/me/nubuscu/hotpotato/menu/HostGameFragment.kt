@@ -110,6 +110,7 @@ class HostGameFragment : Fragment() {
 
     private fun clearConnections() {
         Nearby.getConnectionsClient(requireContext()).stopAllEndpoints()
+        vmAvailableConnections.connected.postValue(mutableListOf())
     }
 
     /**

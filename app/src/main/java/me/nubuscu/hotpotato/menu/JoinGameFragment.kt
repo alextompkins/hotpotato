@@ -64,6 +64,7 @@ class JoinGameFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        vmAvailableConnections.joinable.postValue(mutableListOf())
         startDiscovering()
         GameInfoHolder.instance.isHost = false
     }
