@@ -247,6 +247,14 @@ class InGameActivity : ThemedActivity() {
 
     private fun updateTimeUntilPotatoExpiry() {
         remainingTimeText.text = "${timeUntilExpiry / 1000}s remaining"
+
+        var colourFactor = 1 - (timeUntilExpiry.toFloat() / MIN_POTATO_DURATION)
+        colourFactor = if (colourFactor < 0) 0f else colourFactor
+        potatoImage.setColorFilter(Color.argb(
+            (colourFactor * 150).toInt(),
+            (colourFactor * 255).toInt(),
+            (colourFactor * 16).toInt(),
+            0))
     }
 
     private fun scheduleNextBeep() {
