@@ -1,0 +1,11 @@
+<resources>
+    <!-- Theme Preferences -->
+    <string-array name="theme_values">
+        <item>day_mode</item>
+        <item>night_mode</item>
+    </string-array>
+    <string-array name="theme_entries">
+        <item>Дневной режим</item>
+        <item>Ночной режим</item>
+    </string-array>
+</resources>

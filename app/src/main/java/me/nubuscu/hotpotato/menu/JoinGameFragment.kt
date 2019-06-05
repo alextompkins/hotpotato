@@ -24,12 +24,11 @@ import me.nubuscu.hotpotato.model.JoinableGameModel
 import me.nubuscu.hotpotato.serviceId
 import me.nubuscu.hotpotato.util.GameInfoHolder
 
-
 class JoinGameFragment : Fragment() {
 
-    private var username: String = ""
+    private val username: String
         get() {
-            val default = "new player"
+            val default = getString(R.string.default_username)
             return PreferenceManager
                 .getDefaultSharedPreferences(context)
                 .getString("username", default)
