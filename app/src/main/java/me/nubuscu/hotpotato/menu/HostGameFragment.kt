@@ -30,9 +30,9 @@ import me.nubuscu.hotpotato.util.sendToNearbyEndpoints
 
 class HostGameFragment : Fragment() {
 
-    private var username: String = ""
+    private val username: String
         get() {
-            val default = "new player"
+            val default = getString(R.string.default_username)
             return PreferenceManager
                 .getDefaultSharedPreferences(context)
                 .getString("username", default)
