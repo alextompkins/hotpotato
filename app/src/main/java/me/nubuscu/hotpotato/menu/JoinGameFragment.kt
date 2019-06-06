@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.core.net.toFile
 import androidx.core.net.toUri
@@ -43,7 +44,9 @@ class JoinGameFragment : Fragment() {
                 ?: default
         }
     private lateinit var vmAvailableConnections: AvailableConnectionsViewModel
+    private lateinit var frameLayout: FrameLayout
     private lateinit var joinableGamesList: RecyclerView
+    private lateinit var playersList: RecyclerView
     private lateinit var joiningProgressBar: ProgressBar
 
     override fun onCreateView(
@@ -56,17 +59,26 @@ class JoinGameFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         joiningProgressBar = view.findViewById(R.id.joiningProgressBar)
-        vmAvailableConnections = ViewModelProviders.of(requireActivity()).get(AvailableConnectionsViewModel::class.java)
+        frameLayout = view.findViewById(R.id.frameLayout)
         joinableGamesList = view.findViewById(R.id.joinableGamesList)
         joinableGamesList.layoutManager = LinearLayoutManager(context)
+        playersList = view.findViewById(R.id.playersList)
+        playersList.layoutManager = LinearLayoutManager(context)
+
+        vmAvailableConnections = ViewModelProviders.of(requireActivity()).get(AvailableConnectionsViewModel::class.java)
         vmAvailableConnections.joinable.observe(this, Observer { newGames ->
-            Log.d("FOO", "vm observer triggered")
             if (newGames != null) {
-                Log.d("FOO", "$newGames")
                 joinableGamesList.adapter = JoinableGameAdapter(newGames) { info -> connectTo(info) }
                 (joinableGamesList.adapter as JoinableGameAdapter).notifyDataSetChanged()
             }
         })
+        vmAvailableConnections.connected.observe(this, Observer { connections ->
+            if (connections != null) {
+                playersList.adapter = ClientAdapter(connections)
+                (playersList.adapter as ClientAdapter).notifyDataSetChanged()
+            }
+        })
+        switchTo(joinableGamesList)
     }
 
     override fun onResume() {
@@ -79,6 +91,11 @@ class JoinGameFragment : Fragment() {
     override fun onPause() {
         stopDiscovering()
         super.onPause()
+    }
+
+    private fun switchTo(list: RecyclerView) {
+        frameLayout.removeAllViews()
+        frameLayout.addView(list)
     }
 
     private fun startDiscovering() {
@@ -144,6 +161,7 @@ class JoinGameFragment : Fragment() {
 
                 stopDiscovering()
                 joiningProgressBar.visibility = View.GONE
+                switchTo(playersList)
             }.addOnFailureListener { e ->
                 Log.e("network", "failed to connect to ${game.endpointId}", e)
                 joiningProgressBar.visibility = View.GONE

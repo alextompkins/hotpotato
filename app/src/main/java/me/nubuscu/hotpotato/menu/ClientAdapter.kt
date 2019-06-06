@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.model.ClientDetailsModel
@@ -18,7 +19,7 @@ import me.nubuscu.hotpotato.util.makeRoundDrawableFromBitmap
  */
 class ClientAdapter(
     private val clients: List<ClientDetailsModel>,
-    private val clickListener: (client: ClientDetailsModel) -> Unit
+    private val clickListener: ((client: ClientDetailsModel) -> Unit)? = null
 ) :
     RecyclerView.Adapter<ClientAdapter.ClientViewHolder>() {
     class ClientViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -38,7 +39,10 @@ class ClientAdapter(
     override fun onBindViewHolder(holder: ClientViewHolder, i: Int) {
         val client = clients[i]
         holder.clientName.text = client.name
-        holder.kickButton.setOnClickListener { clickListener(client) }
+        clickListener?.let { holder.kickButton.setOnClickListener { it(client) } }
+        if (clickListener == null) {
+            holder.kickButton.isVisible = false
+        }
         client.profilePicture?.let {
             val drawable = makeRoundDrawableFromBitmap(DataHolder.instance.context.get()!!.resources, makeBitmap(it))
             holder.profilePic.setImageDrawable(drawable)
