@@ -22,7 +22,9 @@ import com.google.android.gms.nearby.connection.Strategy
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
+import me.nubuscu.hotpotato.connection.handler.AvatarUpdateHandler
 import me.nubuscu.hotpotato.model.JoinableGameModel
+import me.nubuscu.hotpotato.model.dto.AvatarUpdateMessage
 import me.nubuscu.hotpotato.serviceId
 import me.nubuscu.hotpotato.util.GameInfoHolder
 
@@ -79,11 +81,13 @@ class JoinGameFragment : Fragment() {
         vmAvailableConnections.joinable.postValue(mutableListOf())
         startDiscovering()
         GameInfoHolder.instance.isHost = false
+        AvatarUpdateHandler.addExtraHandler(avatarUpdateHandler)
     }
 
     override fun onPause() {
         stopDiscovering()
         super.onPause()
+        AvatarUpdateHandler.removeExtraHandler(avatarUpdateHandler)
     }
 
     private fun switchTo(list: RecyclerView) {
@@ -146,5 +150,13 @@ class JoinGameFragment : Fragment() {
                 Log.e("network", "failed to connect to ${game.endpointId}", e)
                 joiningProgressBar.visibility = View.GONE
             }
+    }
+
+    // MESSAGE HANDLERS
+    private val avatarUpdateHandler = { message: AvatarUpdateMessage ->
+        // Update the icon for the player
+        val playersAdapter = playersList.adapter as ClientAdapter
+        val changedIndex = playersAdapter.clients.indexOfFirst { it.id == message.endpointId }
+        playersAdapter.notifyItemChanged(changedIndex)
     }
 }

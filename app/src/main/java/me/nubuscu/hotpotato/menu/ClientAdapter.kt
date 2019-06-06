@@ -18,7 +18,7 @@ import me.nubuscu.hotpotato.util.makeRoundDrawableFromBitmap
  * Adapter to display a list of connected Nearby clients
  */
 class ClientAdapter(
-    private val clients: List<ClientDetailsModel>,
+    val clients: List<ClientDetailsModel>,
     private val clickListener: ((client: ClientDetailsModel) -> Unit)? = null
 ) :
     RecyclerView.Adapter<ClientAdapter.ClientViewHolder>() {

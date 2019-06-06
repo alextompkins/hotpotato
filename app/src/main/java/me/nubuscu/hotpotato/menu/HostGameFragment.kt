@@ -21,7 +21,9 @@ import me.nubuscu.hotpotato.InGameActivity
 import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
+import me.nubuscu.hotpotato.connection.handler.AvatarUpdateHandler
 import me.nubuscu.hotpotato.model.ClientDetailsModel
+import me.nubuscu.hotpotato.model.dto.AvatarUpdateMessage
 import me.nubuscu.hotpotato.model.dto.GameBeginMessage
 import me.nubuscu.hotpotato.model.dto.LobbyUpdateMessage
 import me.nubuscu.hotpotato.serviceId
@@ -87,11 +89,13 @@ class HostGameFragment : Fragment() {
         clearConnections()
         startAdvertising()
         GameInfoHolder.instance.isHost = true
+        AvatarUpdateHandler.addExtraHandler(avatarUpdateHandler)
     }
 
     override fun onPause() {
         super.onPause()
         stopAdvertising()
+        AvatarUpdateHandler.removeExtraHandler(avatarUpdateHandler)
     }
 
     private fun startAdvertising() {
@@ -127,5 +131,22 @@ class HostGameFragment : Fragment() {
     private fun notifyClientsOfClients(members: MutableList<ClientDetailsModel>) {
         val content = LobbyUpdateMessage(members)
         sendToNearbyEndpoints(content, members.map { it.id }, requireContext())
+    }
+
+    // MESSAGE HANDLERS
+    private val avatarUpdateHandler = { message: AvatarUpdateMessage ->
+        // Forward the avatarUpdateMessage to all endpoints apart from ourselves and the one who sent it
+        val info = GameInfoHolder.instance
+        val otherEndpoints = info.endpoints
+            .map { it.id }
+            .filter { it != info.myEndpointId && it != message.endpointId }
+        if (otherEndpoints.isNotEmpty()) {
+            sendToNearbyEndpoints(message, otherEndpoints, requireContext())
+        }
+
+        // Update the icon for the player
+        val clientAdapter = joinedClientsList.adapter as ClientAdapter
+        val changedIndex = clientAdapter.clients.indexOfFirst { it.id == message.endpointId }
+        clientAdapter.notifyItemChanged(changedIndex)
     }
 }
