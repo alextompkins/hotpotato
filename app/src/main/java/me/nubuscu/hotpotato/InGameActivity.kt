@@ -10,7 +10,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import me.nubuscu.hotpotato.connection.handler.GameEndHandler
@@ -34,7 +33,6 @@ class InGameActivity : ThemedActivity() {
     private var scheduler: GameScheduler? = null
     private var setToExpireAt: Long? = null
 
-    private lateinit var remainingTimeText: TextView
     private lateinit var container: LinearLayout
     private lateinit var potatoImage: ImageView
     private lateinit var potatoObject: PhysicsObject2D
@@ -55,7 +53,6 @@ class InGameActivity : ThemedActivity() {
         tiltManager = TiltManager(this)
         vibrateManager = VibrateManager(this)
 
-        remainingTimeText = findViewById(R.id.remainingTimeText)
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
         potatoImage.setImageResource(
@@ -147,7 +144,6 @@ class InGameActivity : ThemedActivity() {
         AlertDialog.Builder(this)
             .setMessage("Are you sure you want to leave the game? This will remove you from the current lobby.")
             .setPositiveButton("Yes") { _, _ ->
-                // TODO Go back to lobby screen and leave current lobby
                 finish()
             }
             .setNegativeButton("No") { dialog, _ ->
@@ -272,8 +268,6 @@ class InGameActivity : ThemedActivity() {
     }
 
     private fun updateTimeUntilPotatoExpiry() {
-        remainingTimeText.text = "${timeUntilExpiry / 1000}s remaining"
-
         var colourFactor = 1 - (timeUntilExpiry.toFloat() / MIN_POTATO_DURATION)
         colourFactor = if (colourFactor < 0) 0f else colourFactor
         potatoImage.setColorFilter(
