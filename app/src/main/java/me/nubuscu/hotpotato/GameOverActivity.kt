@@ -26,7 +26,7 @@ class GameOverActivity : ThemedActivity() {
         loser = gameInfo.endpoints.find { it.id == loserEndpointId }!!
 
         val loserUsername: TextView = findViewById(R.id.loserUsername)
-        loserUsername.text = if (loser.id == gameInfo.myEndpointId) "You" else loser.name
+        loserUsername.text = if (loser.id == gameInfo.myEndpointId) resources.getString(R.string.you) else loser.name
 
         val loserProfilePic: ImageView = findViewById(R.id.loserProfilePic)
         loser.profilePicture?.let {

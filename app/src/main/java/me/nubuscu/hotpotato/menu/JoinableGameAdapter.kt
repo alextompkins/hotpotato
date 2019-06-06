@@ -16,7 +16,6 @@ class JoinableGameAdapter(
 
     class JoinableGameViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val name: TextView = view.findViewById(R.id.endpointName)
-        val serviceId: TextView = view.findViewById(R.id.sessionId)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JoinableGameViewHolder {
@@ -31,8 +30,6 @@ class JoinableGameAdapter(
 
     override fun onBindViewHolder(holder: JoinableGameViewHolder, i: Int) {
         holder.name.text = games[i].endpointName
-        holder.serviceId.text = games[i].serviceId
     }
-
 
 }
