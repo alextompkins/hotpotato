@@ -20,7 +20,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_player_black_100dp" />
+            app:srcCompat="?ic_player_100dp" />
 
         <Button
             android:id="@+id/chooseAvatarButton"
