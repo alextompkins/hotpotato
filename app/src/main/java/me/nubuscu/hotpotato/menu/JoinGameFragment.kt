@@ -69,6 +69,11 @@ class JoinGameFragment : Fragment() {
         })
         vmAvailableConnections.connected.observe(this, Observer { connections ->
             if (connections != null) {
+                // If there are no connections left, go back to searching for games
+                if (connections.isEmpty()) {
+                    GameInfoHolder.instance.endpoints = mutableSetOf()
+                    switchTo(joinableGamesList)
+                }
                 playersList.adapter = ClientAdapter(connections)
                 (playersList.adapter as ClientAdapter).notifyDataSetChanged()
             }
