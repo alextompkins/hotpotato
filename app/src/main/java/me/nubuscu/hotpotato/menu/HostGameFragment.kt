@@ -56,7 +56,14 @@ class HostGameFragment : Fragment() {
         joinedClientsList.layoutManager = LinearLayoutManager(context)
         vmAvailableConnections.connected.observe(this, Observer { newClients ->
             if (newClients != null) {
-                joinedClientsList.adapter = ClientAdapter(newClients) { /*TODO click listener goes here*/ }
+                joinedClientsList.adapter = ClientAdapter(newClients) { client ->
+                    Nearby.getConnectionsClient(requireContext()).disconnectFromEndpoint(client.id)
+                    vmAvailableConnections.connected.postValue(
+                        vmAvailableConnections.connected.value?.filter { x -> x.id != client.id }?.toMutableList()
+                            ?: mutableListOf()
+                    )
+                    (joinedClientsList.adapter as ClientAdapter).notifyDataSetChanged()
+                }
                 (joinedClientsList.adapter as ClientAdapter).notifyDataSetChanged()
                 notifyClientsOfClients(newClients)
             }
