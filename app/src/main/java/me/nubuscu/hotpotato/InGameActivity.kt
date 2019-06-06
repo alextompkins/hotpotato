@@ -27,6 +27,8 @@ import kotlin.random.Random
 const val VIBRATE_DURATION = 75L
 const val MIN_POTATO_DURATION = 10 * 1000L
 const val MAX_POTATO_DURATION = 30 * 1000L
+const val HOVER_BEFORE_PASS_DURATION = 2000L
+const val POST_LOSS_WAIT_DURATION = 1500L
 
 
 class InGameActivity : ThemedActivity() {
@@ -218,7 +220,7 @@ class InGameActivity : ThemedActivity() {
 
             if (!prevOverlapping && nowOverlapping) {
                 runOnUiThread { setHighlighted(icon, true) }
-                scheduler?.schedule(taskId, { runOnUiThread { passPotato(details) } }, 3000)
+                scheduler?.schedule(taskId, { runOnUiThread { passPotato(details) } }, HOVER_BEFORE_PASS_DURATION)
             } else if (prevOverlapping && !nowOverlapping) {
                 runOnUiThread { setHighlighted(icon, false) }
                 scheduler?.cancelTask(taskId)
@@ -306,7 +308,7 @@ class InGameActivity : ThemedActivity() {
 
         Handler(Looper.getMainLooper()).postDelayed({
             goToGameOverScreen(GameInfoHolder.instance.myEndpointId!!, roundDuration)
-        }, 2000L)
+        }, POST_LOSS_WAIT_DURATION)
     }
 
     private fun goToGameOverScreen(loserEndpointId: String, roundDuration: Long) {
@@ -321,8 +323,8 @@ class InGameActivity : ThemedActivity() {
     private val inGameUpdateHandler = { message: InGameUpdateMessage ->
         if (message.dest == GameInfoHolder.instance.myEndpointId) {
             val currentTime = System.currentTimeMillis()
-            // Since it's not very fair if someone receives a potato with only 2 seconds left on it, give them some extra time
-            val timeLeft = if (message.timeRemaining < 2000) {
+            // Since it's not very fair if someone receives a potato with no time to pass it, give them some extra time
+            val timeLeft = if (message.timeRemaining < HOVER_BEFORE_PASS_DURATION + 1000) {
                 message.timeRemaining + Random(currentTime).nextLong(3000, 6000)
             } else {
                 message.timeRemaining
