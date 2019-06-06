@@ -42,6 +42,7 @@ class HostGameFragment : Fragment() {
         }
     private lateinit var vmAvailableConnections: AvailableConnectionsViewModel
     private lateinit var joinedClientsList: RecyclerView
+    private lateinit var startGameButton: Button
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -53,11 +54,13 @@ class HostGameFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        startGameButton = view.findViewById(R.id.startGameButton)
         vmAvailableConnections = ViewModelProviders.of(requireActivity()).get(AvailableConnectionsViewModel::class.java)
         joinedClientsList = view.findViewById(R.id.joinedClientsList)
         joinedClientsList.layoutManager = LinearLayoutManager(context)
         vmAvailableConnections.connected.observe(this, Observer { newClients ->
             if (newClients != null) {
+                startGameButton.isEnabled = newClients.isNotEmpty()
                 joinedClientsList.adapter = ClientAdapter(newClients) { client ->
                     Nearby.getConnectionsClient(requireContext()).disconnectFromEndpoint(client.id)
                     vmAvailableConnections.connected.postValue(
