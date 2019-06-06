@@ -138,7 +138,7 @@ class HostGameFragment : Fragment() {
         val allEndpoints: MutableSet<ClientDetailsModel> = mutableSetOf()
         allEndpoints.addAll(otherEndpoints)
         if (hostDetails != null) allEndpoints.add(hostDetails)
-        sendToNearbyEndpoints(LobbyUpdateMessage(allEndpoints.toList()), otherEndpoints.map { it.id }, requireContext())
+        sendToNearbyEndpoints(LobbyUpdateMessage(allEndpoints), otherEndpoints.map { it.id }, requireContext())
     }
 
     private val avatarUpdateHandler = { message: AvatarUpdateMessage ->
