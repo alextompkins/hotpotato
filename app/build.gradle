@@ -10,8 +10,8 @@ android {
         applicationId "me.nubuscu.hotpotato"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 21_003000  // minSdkVersion + semantic version
-        versionName "0.3.0"
+        versionCode 21_003010  // minSdkVersion + semantic version
+        versionName "0.3.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
