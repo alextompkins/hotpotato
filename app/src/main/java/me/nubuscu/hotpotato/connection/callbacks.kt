@@ -1,6 +1,10 @@
 package me.nubuscu.hotpotato.connection
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import androidx.core.net.toFile
+import androidx.core.net.toUri
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
@@ -12,6 +16,7 @@ import me.nubuscu.hotpotato.util.DataHolder
 import me.nubuscu.hotpotato.util.GameInfoHolder
 import me.nubuscu.hotpotato.util.sendToNearbyEndpoint
 import me.nubuscu.hotpotato.util.serialization.messageGson
+import java.io.File
 
 /**
  * Callback used to handle lifecycle events. Called when advertising to host a game
@@ -36,7 +41,20 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
                 GameInfoHolder.instance.endpoints.addAll(list)
                 viewModel.connected.postValue(list)
 
-                sendToNearbyEndpoint(YouAreMessage(endpointId), endpointId, DataHolder.instance.context.get())
+                val context = DataHolder.instance.context.get()
+                // Let the connected endpoint know both their endpointId and our avatar
+                sendToNearbyEndpoint(YouAreMessage(endpointId), endpointId, context)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    // Send our avatar if we have one
+                    val avatarUri = File(context!!.filesDir, "avatar").toUri()
+                    if (avatarUri.toFile().exists()) {
+                        val rawAvatar = avatarUri.toFile().readBytes()
+                        sendToNearbyEndpoint(
+                            AvatarUpdateMessage(GameInfoHolder.instance.myEndpointId!!, rawAvatar),
+                            endpointId,
+                            context)
+                    }
+                }, 1000)
             }
             ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> Log.d("FOO", "oh no")
             ConnectionsStatusCodes.STATUS_ERROR -> Log.d("FOO", "that's not good")

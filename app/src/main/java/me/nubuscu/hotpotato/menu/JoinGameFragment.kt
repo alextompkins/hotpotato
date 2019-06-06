@@ -2,16 +2,12 @@ package me.nubuscu.hotpotato.menu
 
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ProgressBar
-import androidx.core.net.toFile
-import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -27,11 +23,8 @@ import me.nubuscu.hotpotato.R
 import me.nubuscu.hotpotato.connection.AvailableConnectionsViewModel
 import me.nubuscu.hotpotato.connection.ConnectionLifecycleCallback
 import me.nubuscu.hotpotato.model.JoinableGameModel
-import me.nubuscu.hotpotato.model.dto.AvatarUpdateMessage
 import me.nubuscu.hotpotato.serviceId
 import me.nubuscu.hotpotato.util.GameInfoHolder
-import me.nubuscu.hotpotato.util.sendToNearbyEndpoint
-import java.io.File
 
 class JoinGameFragment : Fragment() {
 
@@ -146,19 +139,6 @@ class JoinGameFragment : Fragment() {
             .requestConnection(username, game.endpointId, ConnectionLifecycleCallback(vmAvailableConnections))
             .addOnSuccessListener {
                 Log.i("network", "successfully requested connection to ${game.endpointId}")
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    // Send our avatar if we have one
-                    val avatarUri = File(requireContext().filesDir, "avatar").toUri()
-                    if (avatarUri.toFile().exists()) {
-                        val rawAvatar = avatarUri.toFile().readBytes()
-                        sendToNearbyEndpoint(
-                            AvatarUpdateMessage(GameInfoHolder.instance.myEndpointId!!, rawAvatar),
-                            game.endpointId,
-                            requireContext())
-                    }
-                }, 500)
-
                 stopDiscovering()
                 joiningProgressBar.visibility = View.GONE
                 switchTo(playersList)
