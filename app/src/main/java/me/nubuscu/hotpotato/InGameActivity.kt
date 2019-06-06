@@ -10,7 +10,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import me.nubuscu.hotpotato.connection.handler.GameEndHandler
@@ -28,13 +27,14 @@ import kotlin.random.Random
 const val VIBRATE_DURATION = 75L
 const val MIN_POTATO_DURATION = 10 * 1000L
 const val MAX_POTATO_DURATION = 30 * 1000L
+const val HOVER_BEFORE_PASS_DURATION = 2000L
+const val POST_LOSS_WAIT_DURATION = 1500L
 
 
 class InGameActivity : ThemedActivity() {
     private var scheduler: GameScheduler? = null
     private var setToExpireAt: Long? = null
 
-    private lateinit var remainingTimeText: TextView
     private lateinit var container: LinearLayout
     private lateinit var potatoImage: ImageView
     private lateinit var potatoObject: PhysicsObject2D
@@ -55,7 +55,6 @@ class InGameActivity : ThemedActivity() {
         tiltManager = TiltManager(this)
         vibrateManager = VibrateManager(this)
 
-        remainingTimeText = findViewById(R.id.remainingTimeText)
         container = findViewById(R.id.container)
         potatoImage = findViewById(R.id.potatoImage)
         potatoImage.setImageResource(
@@ -80,7 +79,13 @@ class InGameActivity : ThemedActivity() {
 
         val otherPlayers = GameInfoHolder.instance.endpoints.filter { it.id != GameInfoHolder.instance.myEndpointId }
         playerMapping = otherPlayers.zip(playerIcons)
-        playerMapping.forEach { (_, icon) -> icon.isVisible = true }
+        playerMapping.forEach { (player, icon) ->
+            player.profilePicture?.let {
+                val drawable = makeRoundDrawableFromBitmap(resources, makeBitmap(it))
+                icon.setImageDrawable(drawable)
+            }
+            icon.isVisible = true
+        }
 
         roundStarted = System.currentTimeMillis()
         isPlaying = GameInfoHolder.instance.isHost
@@ -141,7 +146,6 @@ class InGameActivity : ThemedActivity() {
         AlertDialog.Builder(this)
             .setMessage("Are you sure you want to leave the game? This will remove you from the current lobby.")
             .setPositiveButton("Yes") { _, _ ->
-                // TODO Go back to lobby screen and leave current lobby
                 finish()
             }
             .setNegativeButton("No") { dialog, _ ->
@@ -216,7 +220,7 @@ class InGameActivity : ThemedActivity() {
 
             if (!prevOverlapping && nowOverlapping) {
                 runOnUiThread { setHighlighted(icon, true) }
-                scheduler?.schedule(taskId, { runOnUiThread { passPotato(details) } }, 3000)
+                scheduler?.schedule(taskId, { runOnUiThread { passPotato(details) } }, HOVER_BEFORE_PASS_DURATION)
             } else if (prevOverlapping && !nowOverlapping) {
                 runOnUiThread { setHighlighted(icon, false) }
                 scheduler?.cancelTask(taskId)
@@ -243,7 +247,7 @@ class InGameActivity : ThemedActivity() {
             scheduler?.cancelTask("${GIVE_POTATO.name}-$i")
         }
 
-        Toast.makeText(this, "Sending to player ${receiver.id}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Sending to player ${receiver.name}", Toast.LENGTH_SHORT).show()
         sendToAllNearbyEndpoints(InGameUpdateMessage(timeUntilExpiry, receiver.id), this)
         isPlaying = false
     }
@@ -266,8 +270,6 @@ class InGameActivity : ThemedActivity() {
     }
 
     private fun updateTimeUntilPotatoExpiry() {
-        remainingTimeText.text = "${timeUntilExpiry / 1000}s remaining"
-
         var colourFactor = 1 - (timeUntilExpiry.toFloat() / MIN_POTATO_DURATION)
         colourFactor = if (colourFactor < 0) 0f else colourFactor
         potatoImage.setColorFilter(
@@ -306,7 +308,7 @@ class InGameActivity : ThemedActivity() {
 
         Handler(Looper.getMainLooper()).postDelayed({
             goToGameOverScreen(GameInfoHolder.instance.myEndpointId!!, roundDuration)
-        }, 2000L)
+        }, POST_LOSS_WAIT_DURATION)
     }
 
     private fun goToGameOverScreen(loserEndpointId: String, roundDuration: Long) {
@@ -321,8 +323,8 @@ class InGameActivity : ThemedActivity() {
     private val inGameUpdateHandler = { message: InGameUpdateMessage ->
         if (message.dest == GameInfoHolder.instance.myEndpointId) {
             val currentTime = System.currentTimeMillis()
-            // Since it's not very fair if someone receives a potato with only 2 seconds left on it, give them some extra time
-            val timeLeft = if (message.timeRemaining < 2000) {
+            // Since it's not very fair if someone receives a potato with no time to pass it, give them some extra time
+            val timeLeft = if (message.timeRemaining < HOVER_BEFORE_PASS_DURATION + 1000) {
                 message.timeRemaining + Random(currentTime).nextLong(3000, 6000)
             } else {
                 message.timeRemaining

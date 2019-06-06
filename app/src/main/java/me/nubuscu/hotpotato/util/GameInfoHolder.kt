@@ -18,4 +18,10 @@ class GameInfoHolder {
             Log.d("test", "known endpoints in GameInfoHolder: $endpoints")
         }
     var myEndpointId: String? = null
+
+    /**
+     * Maintains a map of endpoint IDs to the avatars they use
+     * Should include our own endpoint ID and locally stored avatar
+     */
+    val endpointAvatars: MutableMap<String, ByteArray> = mutableMapOf()
 }

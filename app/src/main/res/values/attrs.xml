@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="ic_player_100dp" />
+    <attr name="ic_person_24dp" />
+    <attr name="ic_palette_24dp" />
+</resources>

@@ -4,9 +4,20 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="ic_player_100dp">@drawable/ic_player_black_100dp</item>
+        <item name="ic_person_24dp">@drawable/ic_person_black_24dp</item>
+        <item name="ic_palette_24dp">@drawable/ic_palette_black_24dp</item>
     </style>
 
-    <style name="AppTheme.Dark" parent="Theme.AppCompat.NoActionBar" />
+    <style name="AppTheme.Dark" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/darkColorAccent</item>
+
+        <item name="ic_player_100dp">@drawable/ic_player_white_100dp</item>
+        <item name="ic_person_24dp">@drawable/ic_person_white_24dp</item>
+        <item name="ic_palette_24dp">@drawable/ic_palette_white_24dp</item>
+    </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 

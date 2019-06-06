@@ -19,6 +19,8 @@ val messageGson: Gson
                     .registerSubtype(GameEndMessage::class.java, "gameEnd")
                     .registerSubtype(InGameUpdateMessage::class.java, "inGame")
                     .registerSubtype(YouAreMessage::class.java, "youAre")
+                    .registerSubtype(AvatarUpdateMessage::class.java, "avatarUpdate")
             )
+            .registerTypeAdapter(ByteArray::class.java, ByteArrayToBase64TypeAdapter())
             .create()
     }

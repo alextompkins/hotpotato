@@ -1,10 +1,12 @@
 package me.nubuscu.hotpotato.connection
 
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
-import com.google.android.gms.nearby.connection.PayloadCallback
 import me.nubuscu.hotpotato.connection.handler.*
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.*
@@ -36,7 +38,14 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
                 GameInfoHolder.instance.endpoints.addAll(list)
                 viewModel.connected.postValue(list)
 
-                sendToNearbyEndpoint(YouAreMessage(endpointId), endpointId, DataHolder.instance.context.get())
+                val context = DataHolder.instance.context.get()!!
+                // Let the connected endpoint their own endpointId
+                sendToNearbyEndpoint(YouAreMessage(endpointId), endpointId, context)
+
+                // Send them all the avatars we know about AFTER we know our own endpointId
+                Handler(Looper.getMainLooper()).postDelayed({
+                    sendKnownAvatars(context, endpointId)
+                }, 1000)
             }
             ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> Log.d("FOO", "oh no")
             ConnectionsStatusCodes.STATUS_ERROR -> Log.d("FOO", "that's not good")
@@ -44,6 +53,15 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
                 Log.d("FOO", "unknown connection code: ${result.status.statusCode}")
             }
         }
+    }
+
+    /**
+     * Send all known avatars to the newly-connected endpoint (excluding its own)
+     */
+    private fun sendKnownAvatars(context: Context, endpointId: String) {
+        GameInfoHolder.instance.endpointAvatars
+            .filter { it.key != endpointId }
+            .forEach { sendToNearbyEndpoint(AvatarUpdateMessage(it.key, it.value), endpointId, context) }
     }
 
     override fun onDisconnected(endpointId: String) {
@@ -60,10 +78,32 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
  * Callback to handle receiving payloads
  */
 object MessageHandler : PayloadCallback() {
+    private val incomingPayloads: MutableMap<Long, Payload> = mutableMapOf()
 
     override fun onPayloadReceived(endpointId: String, payload: Payload) {
+        incomingPayloads[payload.id] = payload
+    }
+
+    override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
+        when (update.status) {
+            PayloadTransferUpdate.Status.IN_PROGRESS -> {
+                Log.i("RECEIVING_PAYLOAD", "Payload transferring... ${update.bytesTransferred}/${update.totalBytes} bytes")
+            }
+            PayloadTransferUpdate.Status.SUCCESS -> {
+                val payload = incomingPayloads[update.payloadId]
+                payload?.let { handleCompletePayload(endpointId, payload) }
+            }
+            PayloadTransferUpdate.Status.FAILURE -> {
+                Log.e("RECEIVING_PAYLOAD", "Payload transfer from $endpointId failed")
+            }
+        }
+    }
+
+    private fun handleCompletePayload(endpointId: String, payload: Payload) {
         payload.asBytes()?.let { bytes ->
+            Log.i("RECEIVED_PAYLOAD", String(bytes))
             when (val message = messageGson.fromJson(String(bytes), Message::class.java)) {
+                is AvatarUpdateMessage -> AvatarUpdateHandler.handle(message)
                 is LobbyUpdateMessage -> LobbyUpdateHandler.handle(message)
                 is GameBeginMessage -> GameBeginHandler.handle(message)
                 is GameEndMessage -> GameEndHandler.handle(message)
@@ -72,10 +112,5 @@ object MessageHandler : PayloadCallback() {
                 else -> Log.e("network", "unknown message type received: $message")
             }
         }
-    }
-
-    override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
-        //bytes payloads are sent in one chunk, no need to wait for this
-        //do nothing
     }
 }
