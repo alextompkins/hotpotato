@@ -78,10 +78,18 @@ class JoinGameFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        vmAvailableConnections.joinable.postValue(mutableListOf())
+        clearConnections()
+        switchTo(joinableGamesList)
         startDiscovering()
         GameInfoHolder.instance.isHost = false
         AvatarUpdateHandler.addExtraHandler(avatarUpdateHandler)
+    }
+
+    private fun clearConnections() {
+        GameInfoHolder.instance.endpoints = mutableSetOf()
+        Nearby.getConnectionsClient(requireContext()).stopAllEndpoints()
+        vmAvailableConnections.connected.postValue(mutableListOf())
+        vmAvailableConnections.joinable.postValue(mutableListOf())
     }
 
     override fun onPause() {
