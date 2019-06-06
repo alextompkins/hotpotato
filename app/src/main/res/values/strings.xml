@@ -21,4 +21,5 @@
     <string name="had_the_potato_when_it_exploded">had the potato when it exploded!</string>
     <string name="return_to_lobby">Return to Lobby</string>
     <string name="that_round_lasted">That round lasted %1$d seconds.</string>
+    <string name="choose_avatar">Choose Avatar</string>
 </resources>
