@@ -12,8 +12,9 @@ import java.io.File
 
 object YouAreHandler : PayloadHandler<YouAreMessage>() {
     override fun handle(message: YouAreMessage) {
-        Log.d("iam", "I am ${message.endpoint}")
+        super.handle(message)
 
+        Log.d("iam", "I am ${message.endpoint}")
         GameInfoHolder.instance.apply {
             myEndpointId = message.endpoint
             val default = "new player"
@@ -21,16 +22,16 @@ object YouAreHandler : PayloadHandler<YouAreMessage>() {
                 .getDefaultSharedPreferences(DataHolder.instance.context.get())
                 .getString("username", default)
                 ?: default
+            val myDetails = ClientDetailsModel(myEndpointId!!, myName)
+            endpoints.add(myDetails)
+
             val avatarData = getOwnAvatar()
-            Log.i("YouAreHandler", "avatarData: $avatarData")
-            endpoints.add(ClientDetailsModel(myEndpointId!!, myName, avatarData))
+            myDetails.profilePicture = avatarData
         }
-        super.handle(message)
     }
 
     private fun getOwnAvatar(): ByteArray? {
         val avatarUri = File(DataHolder.instance.context.get()!!.filesDir, "avatar").toUri()
-        Log.i("YouAreHandler", "avatarUri: $avatarUri")
         return if (avatarUri.toFile().exists()) avatarUri.toFile().readBytes() else null
     }
 }

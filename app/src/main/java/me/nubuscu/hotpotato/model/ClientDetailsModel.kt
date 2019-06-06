@@ -1,13 +1,22 @@
 package me.nubuscu.hotpotato.model
 
+import me.nubuscu.hotpotato.util.GameInfoHolder
+
 /**
  * Holds a client that has connected to your game
  */
 data class ClientDetailsModel (
     val id: String,
-    val name: String,
-    var profilePicture: ByteArray? = null
+    val name: String
 ) {
+    var profilePicture: ByteArray?
+        get() = GameInfoHolder.instance.endpointAvatars[this.id]
+        set(value) {
+            if (value != null) {
+                GameInfoHolder.instance.endpointAvatars[this.id] = value
+            }
+        }
+
     override fun toString(): String {
         val profilePicDesc = if (profilePicture == null) "null" else "${profilePicture?.size} bytes"
         return "ClientDetailsModel(id='$id', name='$name', profilePicture=$profilePicDesc)"
