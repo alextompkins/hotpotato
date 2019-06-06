@@ -247,7 +247,7 @@ class InGameActivity : ThemedActivity() {
             scheduler?.cancelTask("${GIVE_POTATO.name}-$i")
         }
 
-        Toast.makeText(this, "Sending to player ${receiver.name}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, resources.getString(R.string.sending_to).format(receiver.name), Toast.LENGTH_SHORT).show()
         sendToAllNearbyEndpoints(InGameUpdateMessage(timeUntilExpiry, receiver.id), this)
         isPlaying = false
     }

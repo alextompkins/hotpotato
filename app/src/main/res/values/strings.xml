@@ -22,4 +22,6 @@
     <string name="return_to_lobby">Return to Lobby</string>
     <string name="that_round_lasted">That round lasted %1$d seconds.</string>
     <string name="choose_avatar">Choose Avatar</string>
+    <string name="sending_to">Sending to %1$s</string>
+    <string name="you">You</string>
 </resources>
