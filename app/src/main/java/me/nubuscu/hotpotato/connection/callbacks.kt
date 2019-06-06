@@ -1,14 +1,12 @@
 package me.nubuscu.hotpotato.connection
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.core.net.toFile
-import androidx.core.net.toUri
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
-import com.google.android.gms.nearby.connection.PayloadCallback
 import me.nubuscu.hotpotato.connection.handler.*
 import me.nubuscu.hotpotato.model.ClientDetailsModel
 import me.nubuscu.hotpotato.model.dto.*
@@ -16,7 +14,6 @@ import me.nubuscu.hotpotato.util.DataHolder
 import me.nubuscu.hotpotato.util.GameInfoHolder
 import me.nubuscu.hotpotato.util.sendToNearbyEndpoint
 import me.nubuscu.hotpotato.util.serialization.messageGson
-import java.io.File
 
 /**
  * Callback used to handle lifecycle events. Called when advertising to host a game
@@ -41,19 +38,13 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
                 GameInfoHolder.instance.endpoints.addAll(list)
                 viewModel.connected.postValue(list)
 
-                val context = DataHolder.instance.context.get()
-                // Let the connected endpoint know both their endpointId and our avatar
+                val context = DataHolder.instance.context.get()!!
+                // Let the connected endpoint their own endpointId
                 sendToNearbyEndpoint(YouAreMessage(endpointId), endpointId, context)
+
+                // Send them all the avatars we know about AFTER we know our own endpointId
                 Handler(Looper.getMainLooper()).postDelayed({
-                    // Send our avatar if we have one
-                    val avatarUri = File(context!!.filesDir, "avatar").toUri()
-                    if (avatarUri.toFile().exists()) {
-                        val rawAvatar = avatarUri.toFile().readBytes()
-                        sendToNearbyEndpoint(
-                            AvatarUpdateMessage(GameInfoHolder.instance.myEndpointId!!, rawAvatar),
-                            endpointId,
-                            context)
-                    }
+                    sendKnownAvatars(context, endpointId)
                 }, 1000)
             }
             ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> Log.d("FOO", "oh no")
@@ -62,6 +53,15 @@ class ConnectionLifecycleCallback(private val viewModel: AvailableConnectionsVie
                 Log.d("FOO", "unknown connection code: ${result.status.statusCode}")
             }
         }
+    }
+
+    /**
+     * Send all known avatars to the newly-connected endpoint (excluding its own)
+     */
+    private fun sendKnownAvatars(context: Context, endpointId: String) {
+        GameInfoHolder.instance.endpointAvatars
+            .filter { it.key != endpointId }
+            .forEach { sendToNearbyEndpoint(AvatarUpdateMessage(it.key, it.value), endpointId, context) }
     }
 
     override fun onDisconnected(endpointId: String) {
