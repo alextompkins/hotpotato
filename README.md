@@ -20,4 +20,4 @@ Keep in mind that smartwatches, bluetooth headphones, etc. will count towards th
 ## Known issues
 * The potato will occasionally go missing. If you see or hear from any lonely potatoes drifting in space, please let us know.
 * Profile photos either work or don't based on a race condition. This may or may not be a bad thing, depending on which selfie you picked.
-* Your friends aren't in the same room as you. A possible solution may come in the form of an internet-based potato transferring method.
+* Your friends aren't always in the same room as you. A possible solution may come in the form of an internet-based potato transferring method.
